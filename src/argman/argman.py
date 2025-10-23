@@ -243,6 +243,7 @@ class ArgMan:
             else:
                 if next_arg is None:
                     raise ValueError(f"Missing value for argument `{arg}`")
+                arg_value = next_arg
             if arg.type is not list:
                 try:
                     arg_value = arg.type(next_arg)
