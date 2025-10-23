@@ -17,11 +17,11 @@ am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose outpu
 args = am.parse()
 print(args.num, args.verbose)
 ```
-# Run
+### Run
 ```
 python script.py --num 10 -v
 ```
-# Output
+### Output
 ```python
 10 True
 ```
