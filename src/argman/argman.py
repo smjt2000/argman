@@ -197,6 +197,74 @@ class ArgMan:
         self.args[long or short].item_type = item_type  # noqa
         return None
 
+    def _parse_short_arg(self, short_arg: str, next_arg: str = None):
+        name = short_arg.removeprefix('-')
+        if len(name) > 1:
+            i = 0
+            while i < len(name):
+                arg_name = name[i]
+                arg_name = self.aliases.get(arg_name)
+                if arg_name is None:
+                    return False
+                arg = self.args.get(arg_name)
+                if arg.type is bool:
+                    arg_value = not arg.default
+                    i += 1
+                else:
+                    if i + 1 >= len(name):
+                        return False
+                    arg_value = name[i + 1:]
+                    i += len(name)
+
+                if arg.type is not list:
+                    try:
+                        arg_value = arg.type(arg_value)
+                    except ValueError:
+                        raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg}`")
+                else:
+                    values = getattr(self.result, arg_name, [])
+                    try:
+                        casted_value = arg.item_type(arg_value)
+                    except Exception:
+                        raise ValueError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
+                    values.append(casted_value)
+                    arg_value = values
+                if arg.short is not None:
+                    setattr(self.result, arg.short, arg_value)
+                if arg.long is not None:
+                    setattr(self.result, arg.long, arg_value)
+        else:
+            arg_name = self.aliases.get(name)
+            if arg_name is None:
+                return False
+            arg = self.args.get(arg_name)
+            if arg.type is bool:
+                arg_value = not arg.default
+            else:
+                if next_arg is None:
+                    raise ValueError(f"Missing value for argument `{arg}`")
+            if arg.type is not list:
+                try:
+                    arg_value = arg.type(next_arg)
+                except ValueError:
+                    raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg}`")
+            else:
+                values = getattr(self.result, arg_name, [])
+                try:
+                    casted_value = arg.item_type(arg_value)
+                except Exception:
+                    raise ValueError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
+                values.append(casted_value)
+                arg_value = values
+            if arg.short is not None:
+                setattr(self.result, arg.short, arg_value)
+            if arg.long is not None:
+                setattr(self.result, arg.long, arg_value)
+        return True
+
+    def _parse_long_arg(self):
+        ...
+
     def parse(self):
         """
         Parses the command-line arguments provided to the program.
@@ -232,6 +300,14 @@ class ArgMan:
             elif arg.startswith('-'):
                 prefix = '-'
             else:
+                i += 1
+                continue
+
+            if prefix == '-':
+                next_arg = None
+                if i + 1 < len(self.argv):
+                    next_arg = self.argv[i + 1]
+                self._parse_short_arg(arg, next_arg)
                 i += 1
                 continue
 
