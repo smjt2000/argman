@@ -47,6 +47,21 @@ class TestArgMan(unittest.TestCase):
         args = parser.parse()
         self.assertEqual(args.name, 'John')
 
+    def test_parse_list_multiple(self):
+        """Should correctly collect multiple values into a list."""
+        sys.argv = ['prog', '--files', 'a.txt', '--files', 'b.txt', '--files', 'c.txt']
+        parser = ArgMan()
+        parser.arg_list(short='f', long='files', default=[])
+        args = parser.parse()
+        self.assertEqual(args.files, ['a.txt', 'b.txt', 'c.txt'])
+
+    def test_default_list_value(self):
+        """List argument should default to an empty list if not provided."""
+        parser = ArgMan()
+        parser.arg_list(long='items', default=[])
+        args = parser.parse()
+        self.assertEqual(args.items, [])
+
     def test_parse_bool_flag(self):
         """Boolean flag should toggle when present."""
         sys.argv = ['prog', '--run']

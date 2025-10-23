@@ -165,6 +165,36 @@ class ArgMan:
         self.__set_arg(bool, short, long, default, desc)
         return None
 
+    def arg_list(self, *, short: str = None, long: str = None, default=None, desc=None):
+        """
+        Defines an optional list argument.
+
+        Args:
+            short (str, optional): Short name for the argument (e.g., `-f`).
+            long (str, optional): Long name for the argument (e.g., `--file`).
+            default (list, optional): Default list value for the argument.
+            desc (str, optional): Description for the argument, used in help messages.
+
+        Raises:
+            TypeError: If the provided default value is not a list.
+
+        Examples:
+            >>> am = ArgMan()
+            >>> am.arg_list(short='f', long='files', default=[], desc='List of input files')
+            >>> # Simulating: python script.py --files a.txt --files b.txt
+            >>> am.argv = ['--files', 'a.txt', '--files', 'b.txt']
+            >>> args = am.parse()
+            >>> print(args.files)
+            ['a.txt', 'b.txt']
+        """
+        if default is None:
+            default = list()
+        else:
+            if not isinstance(default, list):
+                raise TypeError("default must be a list")
+        self.__set_arg(list, short, long, default, desc)
+        return None
+
     def parse(self):
         """
         Parses the command-line arguments provided to the program.
@@ -217,19 +247,26 @@ class ArgMan:
                 if i + 1 >= len(self.argv):
                     raise ValueError(f"Missing value for argument `{arg}`")
                 arg_value = self.argv[i + 1]
-                if _arg.type is not bool:
+                if _arg.type is not list:
                     try:
                         arg_value = _arg.type(arg_value)
                     except ValueError:
                         raise ValueError(f"Value should be a {_arg.type.__name__}. argument `{arg}`")
                 i += 2
 
-            if _arg.short is not None:
-                setattr(self.result, _arg.short, arg_value)
-            if _arg.long is not None:
-                setattr(self.result, _arg.long, arg_value)
-        return self.result
+            if _arg.type is not list:
+                if _arg.short is not None:
+                    setattr(self.result, _arg.short, arg_value)
+                if _arg.long is not None:
+                    setattr(self.result, _arg.long, arg_value)
+            else:
+                values = getattr(self.result, _arg_name)
+                if values is None:
+                    values = []
+                values.append(arg_value)
+                if _arg.short is not None:
+                    setattr(self.result, _arg.short, values)
+                if _arg.long is not None:
+                    setattr(self.result, _arg.long, values)
 
-    def show(self):
-        from pprint import pprint
-        pprint(self.args)
+        return self.result
