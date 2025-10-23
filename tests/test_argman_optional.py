@@ -7,18 +7,25 @@ class TestArgMan(unittest.TestCase):
 
     def setUp(self):
         # هر تست یه نمونه تازه از ArgMan داره
-        self.parser = ArgMan()
+        self.original_argv = sys.argv.copy()
+
+    def tearDown(self):
+        sys.argv = self.original_argv
 
     def test_default_values(self):
         """Arguments should return their default values if not passed."""
-        self.parser.arg_int(long='num', default=3)
-        args = self.parser.parse()
+        sys.argv = ['prog']
+        parser = ArgMan()
+        parser.arg_int(long='num', default=3)
+        args =parser.parse()
         self.assertEqual(args.num, 3)
 
     def test_alias_access(self):
         """Short and long aliases should reference the same value."""
-        self.parser.arg_int(short='n', long='num', default=5)
-        args = self.parser.parse()
+        sys.argv = ['prog']
+        parser = ArgMan()
+        parser.arg_int(short='n', long='num', default=5)
+        args = parser.parse()
         self.assertEqual(args.n, args.num)
         args.n = 10
         self.assertEqual(args.num, 10)
@@ -61,6 +68,23 @@ class TestArgMan(unittest.TestCase):
         parser.arg_list(long='items', default=[])
         args = parser.parse()
         self.assertEqual(args.items, [])
+
+    def test_arg_list_with_item_type(self):
+        """arg_list should cast each value to the specified type."""
+        sys.argv = ['prog', '--nums', '1', '--nums', '2', '--nums', '3']
+        parser = ArgMan()
+        parser.arg_list(short='n', long='nums', item_type=int)
+        args = parser.parse()
+        self.assertEqual(args.nums, [1, 2, 3])
+        self.assertTrue(all(isinstance(x, int) for x in args.nums))
+
+    def test_arg_list_with_item_type_type_error(self):
+        """Should raise ValueError if a list item cannot be cast to the given type."""
+        sys.argv = ['prog', '--nums', '1', '--nums', 'oops']
+        parser = ArgMan()
+        parser.arg_list(long='nums', item_type=int)
+        with self.assertRaises(ValueError):
+            parser.parse()
 
     def test_parse_bool_flag(self):
         """Boolean flag should toggle when present."""

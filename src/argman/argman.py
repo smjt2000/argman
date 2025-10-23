@@ -165,7 +165,7 @@ class ArgMan:
         self.__set_arg(bool, short, long, default, desc)
         return None
 
-    def arg_list(self, *, short: str = None, long: str = None, default=None, desc=None):
+    def arg_list(self, *, short: str = None, long: str = None, default=None, item_type: type = str, desc=None):
         """
         Defines an optional list argument.
 
@@ -174,6 +174,7 @@ class ArgMan:
             long (str, optional): Long name for the argument (e.g., `--file`).
             default (list, optional): Default list value for the argument.
             desc (str, optional): Description for the argument, used in help messages.
+            item_type (type, optional): Type to which each value should be converted (default: str).
 
         Raises:
             TypeError: If the provided default value is not a list.
@@ -193,6 +194,7 @@ class ArgMan:
             if not isinstance(default, list):
                 raise TypeError("default must be a list")
         self.__set_arg(list, short, long, default, desc)
+        self.args[long or short].item_type = item_type  # noqa
         return None
 
     def parse(self):
@@ -263,7 +265,11 @@ class ArgMan:
                 values = getattr(self.result, _arg_name)
                 if values is None:
                     values = []
-                values.append(arg_value)
+                try:
+                    casted_value = _arg.item_type(arg_value)  # noqa
+                except Exception:
+                    raise ValueError(f"Value '{arg_value}' should be of type {_arg.item_type.__name__}")  # noqa
+                values.append(casted_value)
                 if _arg.short is not None:
                     setattr(self.result, _arg.short, values)
                 if _arg.long is not None:
