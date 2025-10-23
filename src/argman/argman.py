@@ -51,7 +51,7 @@ class ArgMan:
         Internal helper for registering an argument.
         """
         if short is None and long is None:
-            raise Exception("one short or long should be passed")
+            raise ValueError("At least one of 'short' or 'long' must be provided")
         main_name = long or short
         arg = _Arg(
             short=short, long=long, type=_type,
