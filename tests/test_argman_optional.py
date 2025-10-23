@@ -94,6 +94,16 @@ class TestArgMan(unittest.TestCase):
         args = parser.parse()
         self.assertTrue(args.run)
 
+    def test_parse_multiple_bool_flags(self):
+        """Boolean flag should toggle when present."""
+        sys.argv = ['prog', '-rp']
+        parser = ArgMan()
+        parser.arg_bool(short='r', long='run', default=False)
+        parser.arg_bool(short='p', long='print', default=False)
+        args = parser.parse()
+        self.assertTrue(args.run)
+        self.assertTrue(args.print)
+
     def test_missing_value_error(self):
         """Should raise ValueError if a non-bool argument is missing a value."""
         sys.argv = ['prog', '--num']
