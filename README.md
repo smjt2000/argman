@@ -30,7 +30,7 @@ Defines a string argument.
 #### `arg_bool(short=None, long=None, default=None, desc=None)`
 Defines a boolean argument.
 
-#### `arg_list(short=None, long=None, default=None, desc=None)`
+#### `arg_list(short=None, long=None, default=None, item_type=str desc=None)`
 Defines an multi-use argument collector.
 
 
