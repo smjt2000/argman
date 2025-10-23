@@ -30,10 +30,11 @@ python script.py --num 10 -v
 
 ## Features
 
-- Short & long aliases (-n / --num)
-- Type-safe parsing (int, float, str, bool)
+- Short & long aliases (`-n` / `--num`)
+- Type-safe parsing (`int`, `float`, `str`, `bool`, `list`)
 - Default values
 - Boolean toggles
+- Repeated arguments via `arg_list`
 - Clean, testable API
 
 ---
