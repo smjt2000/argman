@@ -5,29 +5,6 @@ a simple, zero-dependency alternative to `argparse`.
 
 ---
 
-## Example
-
-```python
-from argman import ArgMan
-
-am = ArgMan()
-am.arg_int(short='n', long='num', default=5, desc='Number of nodes')
-am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose output')
-
-args = am.parse()
-print(args.num, args.verbose)
-```
-### Run
-```
-python script.py --num 10 -v
-```
-### Output
-```python
-10 True
-```
-
----
-
 ## Features
 
 - Short & long aliases (`-n` / `--num`)
@@ -36,6 +13,59 @@ python script.py --num 10 -v
 - Boolean toggles
 - Repeated arguments via `arg_list`
 - Clean, testable API
+
+---
+
+## Defining Arguments
+
+#### `arg_int(short=None, long=None, default=None, desc=None)`
+Defines an integer argument.
+
+#### `arg_float(short=None, long=None, default=None, desc=None)`
+Defines a float argument.
+
+#### `arg_str(short=None, long=None, default=None, desc=None)`
+Defines a string argument.
+
+#### `arg_bool(short=None, long=None, default=None, desc=None)`
+Defines a boolean argument.
+
+#### `arg_list(short=None, long=None, default=None, desc=None)`
+Defines an multi-use argument collector.
+
+
+## Usage
+```python
+from argman import ArgMan
+
+am = ArgMan()
+am.arg_int(short='n', long='num', default=5, desc='Number of nodes')
+am.arg_float(short='r', long='rate', default=1.0, desc='Payment rate')
+am.arg_str(short='a', long='author', default='John Doe', desc='Author name')
+am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose output')
+am.arg_list(short='f', long='files', desc='Input files')
+
+args = am.parse()
+
+print(args.n)       # args.num
+print(args.rate)    # args.r
+print(args.author)  # args.a
+print(args.verbose) # args.v
+print(args.files)   # args.f
+```
+
+### Run
+```bash
+python3 program.py -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt
+```
+
+### Output
+```
+10
+1.2
+Mike
+['file1.txt', 'file2.txt']
+```
 
 ---
 
