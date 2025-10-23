@@ -50,11 +50,11 @@ am.arg_list(
 )
 
 args = am.parse()
-print(args.n)  # args.num
-print(args.rate)  # args.r
-print(args.author)  # args.a
+print(args.n)        # args.num
+print(args.rate)     # args.r
+print(args.author)   # args.a
 print(args.verbose)  # args.v
-print(args.files)  # args.f
+print(args.files)    # args.f
 print(args.numbers)
 
 ```
