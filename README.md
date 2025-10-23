@@ -76,5 +76,28 @@ python -m unittest discover tests
 
 ---
 
+## Roadmap
+
+### v0.1 — Core Functionality
+- [x] Basic argument parsing
+- [x] Short & long aliases
+- [x] Type conversion (int, float, str, bool)
+- [x] Default values
+- [ ] Help message support
+- [ ] Positional argument support
+
+### v0.2 — Extended Features
+- [x] arg_list (multi-use collector)
+- [ ] Custom error messages
+- [ ] Config file parsing
+- [ ] Subcommands support (like git add / git commit)
+
+### v0.3 — Docs & Publis
+- [x] Add docstrings
+- [ ] Publish to PyPI
+
+
+---
+
 ## License
 GPL-3.0 © 2025
