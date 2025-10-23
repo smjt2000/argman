@@ -44,19 +44,24 @@ am.arg_float(short='r', long='rate', default=1.0, desc='Payment rate')
 am.arg_str(short='a', long='author', default='John Doe', desc='Author name')
 am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose output')
 am.arg_list(short='f', long='files', desc='Input files')
+am.arg_list(
+    long='numbers', desc='List of numbers',
+    item_type=int  # try cast each list item to integer
+)
 
 args = am.parse()
-
-print(args.n)       # args.num
-print(args.rate)    # args.r
+print(args.n)  # args.num
+print(args.rate)  # args.r
 print(args.author)  # args.a
-print(args.verbose) # args.v
-print(args.files)   # args.f
+print(args.verbose)  # args.v
+print(args.files)  # args.f
+print(args.numbers)
+
 ```
 
 ### Run
 ```bash
-python3 program.py -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt
+python3 program.py -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt --numbers 5 --numbers 10
 ```
 
 ### Output
@@ -65,6 +70,7 @@ python3 program.py -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt
 1.2
 Mike
 ['file1.txt', 'file2.txt']
+[5, 10]
 ```
 
 ---
