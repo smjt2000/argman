@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argman"
+version = "0.1.0"
+description = "A lightweight argument manager for Python CLI tools"
+readme = "README.md"
+authors = [{ text = "Seyed Mohammad Javad Taghipoor", email = "smjavadt.1379@gmail.com"}]
+license = { text = "GPL-3.0" }
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
