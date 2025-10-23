@@ -1,16 +1,25 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "argman"
 version = "0.1.0"
 description = "A lightweight argument manager for Python CLI tools"
-readme = "README.md"
 authors = [{ text = "Seyed Mohammad Javad Taghipoor", email = "smjavadt.1379@gmail.com"}]
+readme = "README.md"
 license = { text = "GPL-3.0" }
 requires-python = ">=3.10"
+keywords = ["cli", "argparse", "arguments", "parser"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent"
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/smjt2000/argman"
 
 [tool.setuptools.packages.find]
 where = ["src"]
