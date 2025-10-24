@@ -95,8 +95,8 @@ python -m unittest discover tests
 - [x] Short & long aliases
 - [x] Type conversion (int, float, str, bool)
 - [x] Default values
-- [x] Help message support
-- [ ] Positional argument support
+- [x] Positional argument support
+- [ ] Help message support
 
 ### v0.2 — Extended Features
 - [x] arg_list (multi-use collector)
