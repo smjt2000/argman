@@ -104,7 +104,7 @@ python -m unittest discover tests
 - [ ] Config file parsing
 - [ ] Subcommands support (like git add / git commit)
 
-### v0.3 — Docs & Publis
+### v0.3 — Docs & Publish
 - [x] Add docstrings
 - [ ] Publish to PyPI
 
