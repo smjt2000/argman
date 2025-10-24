@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 import sys
 
@@ -8,6 +9,15 @@ class _Arg:
     long: str = None
     type: type = None
     default: int | float | str | list = None
+    desc: str = None
+
+
+@dataclass
+class _PosArg:
+    name: str
+    type: type = str
+    default: int | float | str = None
+    parsed: bool = False
     desc: str = None
 
 
@@ -43,6 +53,7 @@ class ArgMan:
         self.argv = sys.argv[1:]
         self.argc = len(self.argv)
         self.args: dict[str, _Arg] = {}
+        self.pos_args: OrderedDict[str, _PosArg] = OrderedDict()
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
 
@@ -65,6 +76,16 @@ class ArgMan:
             self.aliases[long] = main_name
         if short:
             self.aliases[short] = main_name
+        return None
+
+    def arg_pos(self, name: str, *, default=None, _type=str, desc=None):
+        if default is not None and not isinstance(default, _type):
+            raise ValueError("Type of default value should be the same as defined type")
+        arg = _PosArg(
+            name=name, type=_type,
+            default=default, desc=desc
+        )
+        self.pos_args[name] = arg
         return None
 
     def arg_int(self, *, short: str = None, long: str = None, default=None, desc=None):
@@ -269,6 +290,31 @@ class ArgMan:
     def _parse_long_arg(self):
         ...
 
+    def _parse_pos_arg(self, arg):
+        infered_type = str
+        for t in (int, float):
+            try:
+                arg = t(arg)
+                infered_type = t
+                break
+            except ValueError:
+                pass
+        if len(self.pos_args) < 1:
+            return -1, None
+        name = _arg = None
+        for n, a in self.pos_args.items():
+            if not a.parsed:
+                name = n
+                _arg = a
+                break
+        else:
+            return -1, None
+        if infered_type is _arg.type:
+            self.pos_args.pop(name)
+            setattr(self.result, name, arg)
+            return 0, None
+        return 1, _arg
+
     def parse(self):
         """
         Parses the command-line arguments provided to the program.
@@ -305,6 +351,12 @@ class ArgMan:
                 prefix = '-'
             else:
                 i += 1
+                code, pos_arg = self._parse_pos_arg(arg)
+                if code == -1:
+                    print(f"Unknown argument `{arg}`", file=sys.stderr)
+                elif code == 1:
+                    print(f"Type mismatch for `{pos_arg.name}` (expected {pos_arg.type.__name__})", file=sys.stderr)
+                    exit(1)
                 continue
 
             if prefix == '-':
@@ -354,5 +406,11 @@ class ArgMan:
                     setattr(self.result, _arg.short, values)
                 if _arg.long is not None:
                     setattr(self.result, _arg.long, values)
+
+        if len(self.pos_args) > 0:
+            print("Missing required arguments:", file=sys.stderr)
+            for name in self.pos_args.keys():
+                print(f"    {name}", file=sys.stderr)
+            exit(1)
 
         return self.result
