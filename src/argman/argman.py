@@ -52,6 +52,8 @@ class ArgMan:
         """
         if short is None and long is None:
             raise ValueError("At least one of 'short' or 'long' must be provided")
+        if long is not None:
+            long = long.replace('-', '_')
         main_name = long or short
         arg = _Arg(
             short=short, long=long, type=_type,
