@@ -197,6 +197,7 @@ class ArgMan:
         self.args[long or short].item_type = item_type  # noqa
         return None
 
+    # TODO: make this function work without length check, to make it smaller
     def _parse_short_arg(self, short_arg: str, next_arg: str = None):
         name = short_arg.removeprefix('-')
         if len(name) > 1:
