@@ -221,22 +221,25 @@ class ArgMan:
         return None
 
     # TODO: make this function work without length check, to make it smaller
+    # TODO: better handling jumps and issues
     def _parse_short_arg(self, short_arg: str, next_arg: str = None):
+        jump = 0
         name = short_arg.removeprefix('-')
         if len(name) > 1:
+            jump = 1
             i = 0
             while i < len(name):
                 arg_name = name[i]
                 arg_name = self.aliases.get(arg_name)
                 if arg_name is None:
-                    return False
+                    return False, 0
                 arg = self.args.get(arg_name)
                 if arg.type is bool:
                     arg_value = not arg.default
                     i += 1
                 else:
                     if i + 1 >= len(name):
-                        return False
+                        return False, 0
                     arg_value = name[i + 1:]
                     i += len(name)
 
@@ -260,14 +263,16 @@ class ArgMan:
         else:
             arg_name = self.aliases.get(name)
             if arg_name is None:
-                return False
+                return False, 0
             arg = self.args.get(arg_name)
             if arg.type is bool:
                 arg_value = not arg.default
+                jump = 1
             else:
                 if next_arg is None:
                     raise ValueError(f"Missing value for argument `{arg}`")
                 arg_value = next_arg
+                jump = 2
             if arg.type is not list:
                 try:
                     arg_value = arg.type(next_arg)
@@ -285,7 +290,7 @@ class ArgMan:
                 setattr(self.result, arg.short, arg_value)
             if arg.long is not None:
                 setattr(self.result, arg.long, arg_value)
-        return True
+        return True, jump
 
     def _parse_long_arg(self):
         ...
@@ -363,8 +368,11 @@ class ArgMan:
                 next_arg = None
                 if i + 1 < len(self.argv):
                     next_arg = self.argv[i + 1]
-                self._parse_short_arg(arg, next_arg)
-                i += 1
+                status, jump = self._parse_short_arg(arg, next_arg)
+                if not status:
+                    print(f"Problem in parsing arguments", file=sys.stderr)
+                    exit(1)
+                i += jump
                 continue
 
             arg_name = arg.removeprefix(prefix)
