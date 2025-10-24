@@ -33,6 +33,9 @@ Defines a boolean argument.
 #### `arg_list(short=None, long=None, default=None, item_type=str desc=None)`
 Defines an multi-use argument collector.
 
+#### `arg_pos(name, default=None, _type=str, desc=None)`
+Defines a positional argument.
+
 
 ## Usage
 ```python
@@ -48,6 +51,7 @@ am.arg_list(
     long='numbers', desc='List of numbers',
     item_type=int  # try cast each list item to integer
 )
+am.arg_pos('price', _type=int)
 
 args = am.parse()
 print(args.n)        # args.num
@@ -56,12 +60,13 @@ print(args.author)   # args.a
 print(args.verbose)  # args.v
 print(args.files)    # args.f
 print(args.numbers)
+print(args.price)
 
 ```
 
 ### Run
 ```bash
-python3 program.py -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt --numbers 5 --numbers 10
+python3 program.py 5000 -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt --numbers 5 --numbers 10
 ```
 
 ### Output
@@ -71,6 +76,7 @@ python3 program.py -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt --
 Mike
 ['file1.txt', 'file2.txt']
 [5, 10]
+5000
 ```
 
 ---
