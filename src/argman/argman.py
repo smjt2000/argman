@@ -356,7 +356,7 @@ class ArgMan:
                 try:
                     arg_value = arg.type(next_arg)
                 except ValueError:
-                    raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg}`")
+                    raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
             else:
                 values = getattr(self.result, arg_name, [])
                 try:
