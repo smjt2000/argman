@@ -79,6 +79,63 @@ class ArgMan:
             self.aliases[short] = main_name
         return None
 
+    def _print_help(self):
+        NAME_MAX_LEN = 22
+
+        def get_arg_name(arg):
+            name = ''
+            if arg.short and arg.long:
+                name = f'-{arg.short}, --{arg.long}'
+            elif arg.short:
+                name = f'-{arg.short}'
+            elif arg.long:
+                name = f'--{arg.long}'
+            if arg.type:
+                name += f' <{arg.type.__name__}>'
+
+            return name
+
+        header = f"Usage: {self.program}"
+        opt_poses = []
+        req_poses = []
+        for arg in self.pos_args.values():
+            if arg.required:
+                req_poses.append(arg)
+            else:
+                opt_poses.append(arg)
+
+        if len(self.args) > 0:
+            header += ' [OPTIONS]'
+        if req_poses:
+            text = ' '
+            text += ' '.join([arg.name for arg in req_poses])
+            header += text
+        if opt_poses:
+            text = ''
+            for arg in opt_poses:
+                text += f' [{arg.name}]'
+            header += text
+        print(header)
+        if len(self.args) > 0:
+            print("\nOptions:")
+            for arg in self.args.values():
+                NAME_MAX_LEN = max(NAME_MAX_LEN, len(get_arg_name(arg)))
+            for arg in self.args.values():
+                arg_name = get_arg_name(arg)
+                print(f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc or 'No description'}")
+        if len(req_poses) > 0 or len(opt_poses) > 0:
+            print("\nArguments:")
+            for arg in req_poses + opt_poses:
+                arg_name = f'{arg.name} <{arg.type.__name__}>'
+                text = f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc or 'No description'}"
+                if arg.default is not None and not arg.required:
+                    text += f' (optional, default: {arg.default})'
+                elif arg.default is not None:
+                    text += f' [default: {arg.default}]'
+                elif not arg.required:
+                    text += f' (optional)'
+                print(text)
+
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
         """
         Define a positional argument.
@@ -369,6 +426,10 @@ class ArgMan:
             >>> print(args.num, args.verbose)
             10 False
         """
+        if len(self.argv) > 0 and self.argv[0] == '--help':
+            self._print_help()
+            exit(0)
+
         i = 0
         while i < len(self.argv):
             arg = self.argv[i]
@@ -384,6 +445,7 @@ class ArgMan:
                     print(f"Unknown argument `{arg}`", file=sys.stderr)
                 elif code == 1:
                     print(f"Type mismatch for `{pos_arg.name}` (expected {pos_arg.type.__name__})", file=sys.stderr)
+                    self._print_help()
                     exit(1)
                 continue
 
@@ -394,6 +456,7 @@ class ArgMan:
                 status, jump = self._parse_short_arg(arg, next_arg)
                 if not status:
                     print(f"Problem in parsing arguments", file=sys.stderr)
+                    self._print_help()
                     exit(1)
                 i += jump
                 continue
@@ -410,13 +473,17 @@ class ArgMan:
                 i += 1
             else:
                 if i + 1 >= len(self.argv):
-                    raise ValueError(f"Missing value for argument `{arg}`")
+                    print(f"Missing value for argument `{arg}`", file=sys.stderr)
+                    self._print_help()
+                    exit(1)
                 arg_value = self.argv[i + 1]
                 if _arg.type is not list:
                     try:
                         arg_value = _arg.type(arg_value)
                     except ValueError:
-                        raise ValueError(f"Value should be a {_arg.type.__name__}. argument `{arg}`")
+                        print(f"Value should be a {_arg.type.__name__}. argument `{arg}`", file=sys.stderr)
+                        self._print_help()
+                        exit(1)
                 i += 2
 
             if _arg.type is not list:
@@ -431,7 +498,9 @@ class ArgMan:
                 try:
                     casted_value = _arg.item_type(arg_value)  # noqa
                 except Exception:
-                    raise ValueError(f"Value '{arg_value}' should be of type {_arg.item_type.__name__}")  # noqa
+                    print(f"Value '{arg_value}' should be of type {_arg.item_type.__name__}", file=sys.stderr)  # noqa
+                    self._print_help()
+                    exit(1)
                 values.append(casted_value)
                 if _arg.short is not None:
                     setattr(self.result, _arg.short, values)
@@ -443,6 +512,7 @@ class ArgMan:
             print("Missing required arguments:", file=sys.stderr)
             for name in missing:
                 print(f"    {name}", file=sys.stderr)
+            self._print_help()
             exit(1)
 
         return self.result
