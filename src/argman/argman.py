@@ -17,6 +17,7 @@ class _PosArg:
     name: str
     type: type = str
     default: int | float | str = None
+    required: bool = False
     parsed: bool = False
     desc: str = None
 
@@ -78,14 +79,16 @@ class ArgMan:
             self.aliases[short] = main_name
         return None
 
-    def arg_pos(self, name: str, *, default=None, _type=str, desc=None):
+    def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
         if default is not None and not isinstance(default, _type):
             raise ValueError("Type of default value should be the same as defined type")
         arg = _PosArg(
             name=name, type=_type,
-            default=default, desc=desc
+            default=default, desc=desc,
+            required=required
         )
         self.pos_args[name] = arg
+        setattr(self.result, name, default)
         return None
 
     def arg_int(self, *, short: str = None, long: str = None, default=None, desc=None):
@@ -308,9 +311,10 @@ class ArgMan:
             return -1, None
         name = _arg = None
         for n, a in self.pos_args.items():
-            if not a.parsed:
+            if not a.parsed and a.required:
                 name = n
                 _arg = a
+                self.pos_args[n].parsed = True
                 break
         else:
             return -1, None
@@ -415,9 +419,10 @@ class ArgMan:
                 if _arg.long is not None:
                     setattr(self.result, _arg.long, values)
 
-        if len(self.pos_args) > 0:
+        missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required]
+        if len(missing) > 1:
             print("Missing required arguments:", file=sys.stderr)
-            for name in self.pos_args.keys():
+            for name in missing:
                 print(f"    {name}", file=sys.stderr)
             exit(1)
 
