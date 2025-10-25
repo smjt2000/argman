@@ -80,6 +80,25 @@ class ArgMan:
         return None
 
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
+        """
+        Define a positional argument.
+
+        Args:
+            name (str): Name of the argument variable.
+            required (bool, optional): Whether the argument must be provided. Defaults to True.
+            default (any, optional): Default value for the argument if not provided.
+            _type (type, optional): Type to which the argument value should be converted. Defaults to str.
+            desc (str, optional): Description for the argument, used in help messages.
+
+        Raises:
+            ValueError: If the argument is required but no default value is provided.
+
+        Examples:
+            >>> am = ArgMan()
+            >>> am.arg_pos('input_path', required=False, desc='Path to the input file')
+            >>> args = am.parse()
+            >>> print(args.input_path)
+        """
         if default is not None and not isinstance(default, _type):
             raise ValueError("Type of default value should be the same as defined type")
         arg = _PosArg(
