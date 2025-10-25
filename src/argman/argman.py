@@ -108,7 +108,7 @@ class ArgMan:
             >>> print(args.node)
             3
         """
-        if default is None or not isinstance(default, int):
+        if default is not None and not isinstance(default, int):
             raise TypeError("default must be an int")
         self.__set_arg(int, short, long, default, desc)
         return None
@@ -133,7 +133,7 @@ class ArgMan:
             >>> print(args.rate)
             1.0
         """
-        if default is None or not isinstance(default, (float, int)):
+        if default is not None and not isinstance(default, (float, int)):
             raise TypeError("default must be a number")
         self.__set_arg(float, short, long, float(default), desc)
         return None
@@ -158,7 +158,7 @@ class ArgMan:
             >>> print(args.author)
             'John Doe'
         """
-        if default is None or not isinstance(default, str):
+        if default is not None and not isinstance(default, str):
             raise TypeError("default must be a str")
         self.__set_arg(str, short, long, default, desc)
         return None
