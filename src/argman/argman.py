@@ -122,12 +122,12 @@ class ArgMan:
                 NAME_MAX_LEN = max(NAME_MAX_LEN, len(get_arg_name(arg)))
             for arg in self.args.values():
                 arg_name = get_arg_name(arg)
-                print(f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc or 'No description'}")
+                print(f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc.capitalize() or 'No description'}")
         if len(req_poses) > 0 or len(opt_poses) > 0:
             print("\nArguments:")
             for arg in req_poses + opt_poses:
                 arg_name = f'{arg.name} <{arg.type.__name__}>'
-                text = f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc or 'No description'}"
+                text = f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc.capitalize() or 'No description'}"
                 if arg.default is not None and not arg.required:
                     text += f' (optional, default: {arg.default})'
                 elif arg.default is not None:
