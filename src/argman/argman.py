@@ -49,8 +49,8 @@ class _ArgResult:
 
 
 class ArgMan:
-    def __init__(self):
-        self.program = sys.argv[0]
+    def __init__(self, prog=None):
+        self.program = prog or sys.argv[0]
         self.argv = sys.argv[1:]
         self.argc = len(self.argv)
         self.args: dict[str, _Arg] = {}
