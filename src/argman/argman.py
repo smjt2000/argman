@@ -18,6 +18,7 @@ class _PosArg:
     type: type = str
     default: int | float | str = None
     required: bool = False
+    num_as_str: bool = True
     parsed: bool = False
     desc: str = None
 
@@ -136,7 +137,7 @@ class ArgMan:
                     text += f' (optional)'
                 print(text)
 
-    def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
+    def arg_pos(self, name: str, *, required=True, default=None, _type=str, num_as_str=True, desc=None):
         """
         Define a positional argument.
 
@@ -145,10 +146,13 @@ class ArgMan:
             required (bool, optional): Whether the argument must be provided. Defaults to True.
             default (any, optional): Default value for the argument if not provided.
             _type (type, optional): Type to which the argument value should be converted. Defaults to str.
+            num_as_str (bool, optional): Determines wheter numeric inputs should be accepted as valid strings when `_type` is `str`.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
-            ValueError: If the argument is required but no default value is provided.
+            ValueError:
+                - If the argument is required but no default value is provided.
+                - If `-type` is `str` and `num_as_str=False`, and default value is numeric.
 
         Examples:
             >>> am = ArgMan()
@@ -157,11 +161,12 @@ class ArgMan:
             >>> print(args.input_path)
         """
         if default is not None and not isinstance(default, _type):
-            raise ValueError("Type of default value should be the same as defined type")
+            if _type is str and not num_as_str:
+                raise ValueError("Type of default value should be the same as defined type")
         arg = _PosArg(
             name=name, type=_type,
             default=default, desc=desc,
-            required=required
+            required=required, num_as_str=num_as_str
         )
         self.pos_args[name] = arg
         setattr(self.result, name, default)
@@ -402,11 +407,12 @@ class ArgMan:
                 break
             else:
                 return -1, None
-        if infered_type is _arg.type:
-            self.pos_args.pop(name)
-            setattr(self.result, name, arg)
-            return 0, None
-        return 1, _arg
+        if not (infered_type is _arg.type):
+            if not (_arg.type is str and _arg.num_as_str and infered_type in (int, float)):
+                return 1, _arg
+        self.pos_args.pop(name)
+        setattr(self.result, name, arg)
+        return 0, None
 
     def parse(self):
         """
