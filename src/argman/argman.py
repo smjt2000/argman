@@ -487,6 +487,8 @@ class ArgMan:
                 code, pos_arg = self._parse_pos_arg(arg)
                 if code == -1:
                     print(f"Unknown argument `{arg}`", file=sys.stderr)
+                    self._print_help()
+                    exit(1)
                 elif code == 1:
                     print(f"Type mismatch for `{pos_arg.name}` (expected {pos_arg.type.__name__})", file=sys.stderr)
                     self._print_help()
