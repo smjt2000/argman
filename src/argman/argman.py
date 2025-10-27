@@ -9,6 +9,7 @@ class _Arg:
     long: str = None
     type: type = None
     default: int | float | str | list = None
+    num_as_str: bool = False
     desc: str = None
 
 
@@ -59,7 +60,7 @@ class ArgMan:
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
 
-    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None):
+    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None, num_as_str=False):
         """
         Internal helper for registering an argument.
         """
@@ -70,7 +71,7 @@ class ArgMan:
         main_name = long or short
         arg = _Arg(
             short=short, long=long, type=_type,
-            default=default, desc=desc
+            default=default, desc=desc, num_as_str=num_as_str
         )
         self.args[main_name] = arg
         setattr(self.result, main_name, default)
@@ -222,7 +223,7 @@ class ArgMan:
         self.__set_arg(float, short, long, float(default), desc)
         return None
 
-    def arg_str(self, *, short: str = None, long: str = None, default=None, desc=None):
+    def arg_str(self, *, short: str = None, long: str = None, default=None, num_as_str=True, desc=None):
         """
         Defines an optional string argument.
 
@@ -230,6 +231,7 @@ class ArgMan:
             short (str, optional): Short name for the argument (e.g., `-a`).
             long (str, optional): Long name for the argument (e.g., `--author`).
             default (str, required): Default str value for the argument.
+            num_as_str (bool, optional): Determines wheter numeric inputs should be accepted as valid strings when `_type` is `str`.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -242,9 +244,9 @@ class ArgMan:
             >>> print(args.author)
             'John Doe'
         """
-        if default is not None and not isinstance(default, str):
+        if default is not None and not isinstance(default, str) and not num_as_str:
             raise TypeError("default must be a str")
-        self.__set_arg(str, short, long, default, desc)
+        self.__set_arg(str, short, long, default, desc, num_as_str)
         return None
 
     def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None):
@@ -328,10 +330,26 @@ class ArgMan:
                     i += len(name)
 
                 if arg.type is not list:
-                    try:
-                        arg_value = arg.type(arg_value)
-                    except ValueError:
-                        raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg}`")
+                    if arg.type is not str:
+                        try:
+                            arg_value = arg.type(arg_value)
+                        except ValueError:
+                            print(f"Value should be a {arg.type.__name__}. argument `{arg}`", file=sys.stderr)
+                            self._print_help()
+                            exit(1)
+                    else:
+                        try:
+                            for t in (float, int):
+                                t(arg_value)
+                                arg_value = str(arg_value)
+                            if not arg.num_as_str:
+                                print(f"Value should be a str. argument `{arg}`", file=sys.stderr)
+                                self._print_help()
+                                exit(1)
+                        except ValueError:
+                            pass
+
+
                 else:
                     values = getattr(self.result, arg_name, [])
                     try:
@@ -358,10 +376,22 @@ class ArgMan:
                 arg_value = next_arg
                 jump = 2
             if arg.type is not list:
-                try:
-                    arg_value = arg.type(next_arg)
-                except ValueError:
-                    raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
+                if arg.type is not str:
+                    try:
+                        arg_value = arg.type(next_arg)
+                    except ValueError:
+                        raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
+                else:
+                    try:
+                        for t in (float, int):
+                            t(arg_value)
+                            arg_value = str(arg_value)
+                            if not arg.num_as_str:
+                                print(f"Value should be a str. argument `{arg.long or arg.short}`", file=sys.stderr)
+                                self._print_help()
+                                exit(1)
+                    except ValueError:
+                        pass
             else:
                 values = getattr(self.result, arg_name, [])
                 try:
@@ -492,12 +522,24 @@ class ArgMan:
                     exit(1)
                 arg_value = self.argv[i + 1]
                 if _arg.type is not list:
-                    try:
-                        arg_value = _arg.type(arg_value)
-                    except ValueError:
-                        print(f"Value should be a {_arg.type.__name__}. argument `{arg}`", file=sys.stderr)
-                        self._print_help()
-                        exit(1)
+                    if _arg.type is not str:
+                        try:
+                            arg_value = _arg.type(arg_value)
+                        except ValueError:
+                            print(f"Value should be a {_arg.type.__name__}. argument `{arg}`", file=sys.stderr)
+                            self._print_help()
+                            exit(1)
+                    else:
+                        try:
+                            for t in (float, int):
+                                t(arg_value)
+                                arg_value = str(arg_value)
+                            if not _arg.num_as_str:
+                                print(f"Value should be a str. argument `{arg}`", file=sys.stderr)
+                                self._print_help()
+                                exit(1)
+                        except ValueError:
+                            pass
                 i += 2
 
             if _arg.type is not list:
