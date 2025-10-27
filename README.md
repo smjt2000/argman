@@ -24,7 +24,7 @@ Defines an integer argument.
 #### `arg_float(short=None, long=None, default=None, desc=None)`
 Defines a float argument.
 
-#### `arg_str(short=None, long=None, default=None, desc=None)`
+#### `arg_str(short=None, long=None, default=None, num_as_str=True, desc=None)`
 Defines a string argument.
 
 #### `arg_bool(short=None, long=None, default=None, desc=None)`
@@ -33,7 +33,7 @@ Defines a boolean argument.
 #### `arg_list(short=None, long=None, default=None, item_type=str desc=None)`
 Defines an multi-use argument collector.
 
-#### `arg_pos(name, default=None, _type=str, desc=None)`
+#### `arg_pos(name, default=None, _type=str, num_as_str=True, desc=None)`
 Defines a positional argument.
 
 
