@@ -19,25 +19,31 @@ a simple, zero-dependency alternative to `argparse`.
 ## Defining Arguments
 
 #### `arg_int(short=None, long=None, default=None, desc=None)`
+
 Defines an integer argument.
 
 #### `arg_float(short=None, long=None, default=None, desc=None)`
+
 Defines a float argument.
 
 #### `arg_str(short=None, long=None, default=None, num_as_str=True, desc=None)`
+
 Defines a string argument.
 
 #### `arg_bool(short=None, long=None, default=None, desc=None)`
+
 Defines a boolean argument.
 
 #### `arg_list(short=None, long=None, default=None, item_type=str desc=None)`
+
 Defines an multi-use argument collector.
 
 #### `arg_pos(name, default=None, _type=str, num_as_str=True, desc=None)`
+
 Defines a positional argument.
 
-
 ## Usage
+
 ```python
 from argman import ArgMan
 
@@ -54,22 +60,24 @@ am.arg_list(
 am.arg_pos('price', _type=int)
 
 args = am.parse()
-print(args.n)        # args.num
-print(args.rate)     # args.r
-print(args.author)   # args.a
+print(args.n)  # args.num
+print(args.rate)  # args.r
+print(args.author)  # args.a
 print(args.verbose)  # args.v
-print(args.files)    # args.f
+print(args.files)  # args.f
 print(args.numbers)
 print(args.price)
 
 ```
 
 ### Run
+
 ```bash
 python3 program.py 5000 -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt --numbers 5 --numbers 10
 ```
 
 ### Output
+
 ```
 10
 1.2
@@ -82,6 +90,7 @@ Mike
 ---
 
 ## Running Tests
+
 ```
 python -m unittest discover tests
 ```
@@ -91,6 +100,7 @@ python -m unittest discover tests
 ## Roadmap
 
 ### v0.1 — Core Functionality
+
 - [x] Basic argument parsing
 - [x] Short & long aliases
 - [x] Type conversion (int, float, str, bool)
@@ -99,17 +109,26 @@ python -m unittest discover tests
 - [x] Help message support
 
 ### v0.2 — Extended Features
+
 - [x] arg_list (multi-use collector)
 - [ ] Custom error messages
 - [ ] Config file parsing
 - [ ] Subcommands support (like git add / git commit)
 
 ### v0.3 — Docs & Publish
+
 - [x] Add docstrings
 - [ ] Publish to PyPI
 
+### v0.4 — Validation & Customization
+
+- [ ] Argument validators (e.g. validator=lambda x: x > 0)
+- [ ] Value formatters (e.g. formatter=str.lower)
+- [ ] Requires dependencies between arguments
+- [ ] Customizable error & help handlers
 
 ---
 
 ## License
+
 GPL-3.0 © 2025
