@@ -442,7 +442,6 @@ class ArgMan:
         if not (infered_type is _arg.type):
             if not (_arg.type is str and _arg.num_as_str and infered_type in (int, float)):
                 return 1, _arg
-        self.pos_args.pop(name)
         setattr(self.result, name, arg)
         return 0, None
 
