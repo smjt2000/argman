@@ -7,7 +7,6 @@ from argman import ArgMan
 class TestArgMan(unittest.TestCase):
 
     def setUp(self):
-        # هر تست یه نمونه تازه از ArgMan داره
         self.original_argv = sys.argv.copy()
 
     def tearDown(self):
@@ -18,7 +17,7 @@ class TestArgMan(unittest.TestCase):
         sys.argv = ['prog']
         parser = ArgMan()
         parser.arg_int(long='num', default=3)
-        args =parser.parse()
+        args = parser.parse()
         self.assertEqual(args.num, 3)
 
     def test_alias_access(self):
