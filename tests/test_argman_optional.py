@@ -1,5 +1,6 @@
 import unittest
 import sys
+import io
 from argman import ArgMan
 
 
@@ -80,11 +81,15 @@ class TestArgMan(unittest.TestCase):
 
     def test_arg_list_with_item_type_type_error(self):
         """Should raise ValueError if a list item cannot be cast to the given type."""
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
         sys.argv = ['prog', '--nums', '1', '--nums', 'oops']
         parser = ArgMan()
         parser.arg_list(long='nums', item_type=int)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(SystemExit):
             parser.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("should be of type int", capture_err.getvalue())
 
     def test_parse_bool_flag(self):
         """Boolean flag should toggle when present."""
@@ -106,11 +111,15 @@ class TestArgMan(unittest.TestCase):
 
     def test_missing_value_error(self):
         """Should raise ValueError if a non-bool argument is missing a value."""
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
         sys.argv = ['prog', '--num']
         parser = ArgMan()
         parser.arg_int(long='num', default=0)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(SystemExit):
             parser.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Missing value for argument `--num`", capture_err.getvalue())
 
     def test_unknown_argument(self):
         """Unknown arguments should not break the parser."""
