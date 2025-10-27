@@ -64,6 +64,7 @@ class TestArgMan(unittest.TestCase):
 
     def test_default_list_value(self):
         """List argument should default to an empty list if not provided."""
+        sys.argv = ['prog']
         parser = ArgMan()
         parser.arg_list(long='items', default=[])
         args = parser.parse()
@@ -122,11 +123,15 @@ class TestArgMan(unittest.TestCase):
 
     def test_unknown_argument(self):
         """Unknown arguments should not break the parser."""
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
         sys.argv = ['prog', '--unknown', '5']
         parser = ArgMan()
         parser.arg_int(long='num', default=1)
-        args = parser.parse()
-        self.assertEqual(args.num, 1)  # unaffected
+        with self.assertRaises(SystemExit):
+            args = parser.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Unknown argument `--unknown`", capture_err.getvalue())  # unaffected
 
 
 if __name__ == '__main__':
