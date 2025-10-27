@@ -386,14 +386,22 @@ class ArgMan:
         if len(self.pos_args) < 1:
             return -1, None
         name = _arg = None
-        for n, a in self.pos_args.items():
-            if not a.parsed and a.required:
-                name = n
-                _arg = a
-                self.pos_args[n].parsed = True
-                break
+
+        req = [a for a in self.pos_args.values() if not a.parsed and a.required]
+        non_req = [a for a in self.pos_args.values() if not a.parsed and not a.required]
+        for a in req:
+            name = a.name
+            _arg = a
+            self.pos_args[name].parsed = True
+            break
         else:
-            return -1, None
+            for a in non_req:
+                name = a.name
+                _arg = a
+                self.pos_args[name].parsed = True
+                break
+            else:
+                return -1, None
         if infered_type is _arg.type:
             self.pos_args.pop(name)
             setattr(self.result, name, arg)
