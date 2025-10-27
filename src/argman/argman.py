@@ -565,7 +565,7 @@ class ArgMan:
                 if _arg.long is not None:
                     setattr(self.result, _arg.long, values)
 
-        missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required]
+        missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required and not a.default]
         if len(missing) > 0:
             print("Missing required arguments:", file=sys.stderr)
             for name in missing:
