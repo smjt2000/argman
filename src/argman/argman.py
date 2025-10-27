@@ -164,6 +164,8 @@ class ArgMan:
         if default is not None and not isinstance(default, _type):
             if _type is str and not num_as_str:
                 raise ValueError("Type of default value should be the same as defined type")
+            if _type is not str:
+                raise ValueError("Type of default value should be the same as defined type")
         arg = _PosArg(
             name=name, type=_type,
             default=default, desc=desc,
