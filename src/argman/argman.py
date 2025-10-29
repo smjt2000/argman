@@ -59,8 +59,9 @@ class ArgParseError(Exception):
 
 
 class ArgMan:
-    def __init__(self, prog=None):
+    def __init__(self, prog=None, exit_on_err=True):
         self.program = prog or sys.argv[0]
+        self.exit_on_err = exit_on_err
         self.argv = sys.argv[1:]
         self.argc = len(self.argv)
         self.args: dict[str, _Arg] = {}
@@ -148,9 +149,11 @@ class ArgMan:
                 print(text)
 
     def _print_err(self, message: str):
-        print(message, file=sys.stderr)
-        self._print_help()
-        exit(1)
+        if self.exit_on_err:
+            print(message, file=sys.stderr)
+            self._print_help()
+            exit(1)
+        raise ArgParseError(message)
 
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, num_as_str=True, desc=None):
         """
