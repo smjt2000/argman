@@ -146,6 +146,11 @@ class ArgMan:
                     text += f' (optional)'
                 print(text)
 
+    def _print_err(self, message: str):
+        print(message, file=sys.stderr)
+        self._print_help()
+        exit(1)
+
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, num_as_str=True, desc=None):
         """
         Define a positional argument.
@@ -464,10 +469,7 @@ class ArgMan:
                     self._parse_pos_arg(arg)
                     continue
                 except ArgParseError as e:
-                    print(str(e), file=sys.stderr)
-                    print()
-                    self._print_help()
-                    exit(1)
+                    self._print_err(str(e))
 
             if prefix == '-':
                 next_arg = None
@@ -478,10 +480,7 @@ class ArgMan:
                     i += jump
                     continue
                 except ArgParseError as e:
-                    print(str(e), file=sys.stderr)
-                    print()
-                    self._print_help()
-                    exit(1)
+                    self._print_err(str(e))
 
             arg_name = arg.removeprefix(prefix)
             _arg_name = self.aliases.get(arg_name)
@@ -495,27 +494,21 @@ class ArgMan:
                 i += 1
             else:
                 if i + 1 >= len(self.argv):
-                    print(f"Missing value for argument `{arg}`", file=sys.stderr)
-                    self._print_help()
-                    exit(1)
+                    self._print_err(f"Missing value for argument '{arg}'")
                 arg_value = self.argv[i + 1]
                 if _arg.type is not list:
                     if _arg.type is not str:
                         try:
                             arg_value = _arg.type(arg_value)
                         except ValueError:
-                            print(f"Value should be a {_arg.type.__name__}. argument `{arg}`", file=sys.stderr)
-                            self._print_help()
-                            exit(1)
+                            self._print_err(f"Value should be a {_arg.type.__name__}. argument `{arg}`")
                     else:
                         try:
                             for t in (float, int):
                                 t(arg_value)
                                 arg_value = str(arg_value)
                             if not _arg.num_as_str:
-                                print(f"Value should be a str. argument `{arg}`", file=sys.stderr)
-                                self._print_help()
-                                exit(1)
+                                self._print_err(f"Value should be a str. argument `{arg}`")
                         except ValueError:
                             pass
                 i += 2
@@ -532,9 +525,7 @@ class ArgMan:
                 try:
                     casted_value = _arg.item_type(arg_value)  # noqa
                 except Exception:
-                    print(f"Value '{arg_value}' should be of type {_arg.item_type.__name__}", file=sys.stderr)  # noqa
-                    self._print_help()
-                    exit(1)
+                    self._print_err(f"Value '{arg_value}' should be of type {_arg.item_type.__name__}")  # noqa
                 values.append(casted_value)
                 if _arg.short is not None:
                     setattr(self.result, _arg.short, values)
@@ -543,11 +534,7 @@ class ArgMan:
 
         missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required and not a.default]
         if len(missing) > 0:
-            print("Missing required arguments:", file=sys.stderr)
-            for name in missing:
-                print(f"    {name}", file=sys.stderr)
-            print()
-            self._print_help()
-            exit(1)
-
+            message = "Missing required arguments:\n"
+            message += '\n'.join([f"    {name}" for name in missing])
+            self._print_err(message)
         return self.result
