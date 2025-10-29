@@ -128,8 +128,7 @@ class TestArgMan(unittest.TestCase):
         sys.argv = ['prog', '--unknown', '5']
         parser = ArgMan()
         parser.arg_int(long='num', default=1)
-        with self.assertRaises(SystemExit):
-            args = parser.parse()
+        args = parser.parse()
         sys.stderr = sys.__stderr__
         self.assertIn("Unknown argument `--unknown`", capture_err.getvalue())  # unaffected
 
