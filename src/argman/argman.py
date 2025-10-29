@@ -68,7 +68,7 @@ class ArgMan:
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
 
-    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None):
+    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None, item_type=None):
         """
         Internal helper for registering an argument.
         """
@@ -80,7 +80,7 @@ class ArgMan:
         main_name = long or short
         arg = _Arg(
             short=short, long=_long, type=_type,
-            default=default, desc=desc
+            default=default, desc=desc, item_type=item_type
         )
         self.args[main_name] = arg
         setattr(self.result, main_name, default)
@@ -314,8 +314,7 @@ class ArgMan:
         else:
             if not isinstance(default, list):
                 raise TypeError("default must be a list")
-        self.__set_arg(list, short, long, default, desc)
-        self.args[long or short].item_type = item_type
+        self.__set_arg(list, short, long, default, desc, item_type)
         return None
 
     # TODO: make this function work without length check, to make it smaller
