@@ -131,4 +131,4 @@ python -m unittest discover tests
 
 ## License
 
-GPL-3.0 © 2025
+LGPL-3.0 © 2025
