@@ -102,7 +102,10 @@ class ArgMan:
             elif arg.long:
                 name = f'--{arg.long}'
             if arg.type:
-                name += f' <{arg.type.__name__}>'
+                if arg.type is list:
+                    name += f' <{arg.type.__name__}[{arg.item_type.__name__}]>'
+                else:
+                    name += f' <{arg.type.__name__}>'
 
             return name
 
