@@ -50,6 +50,14 @@ class _ArgResult:
         return f"<ArgResult {args}>"
 
 
+class ArgParseError(Exception):
+    """Exception raised for errors in command-line argument parsing."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
 class ArgMan:
     def __init__(self, prog=None):
         self.program = prog or sys.argv[0]
@@ -320,46 +328,15 @@ class ArgMan:
                 arg_name = name[i]
                 arg_name = self.aliases.get(arg_name)
                 if arg_name is None:
-                    return False, 0
+                    raise ArgParseError(f"Unknown argument '-{short_arg}'")
                 arg = self.args.get(arg_name)
                 if arg.type is bool:
                     arg_value = not arg.default
                     i += 1
                 else:
-                    if i + 1 >= len(name):
-                        return False, 0
-                    arg_value = name[i + 1:]
-                    i += len(name)
+                    raise ArgParseError(
+                        f"Option '-{arg_name}' requires an argument and cannot be clustered with other short options.")
 
-                if arg.type is not list:
-                    if arg.type is not str:
-                        try:
-                            arg_value = arg.type(arg_value)
-                        except ValueError:
-                            print(f"Value should be a {arg.type.__name__}. argument `{arg}`", file=sys.stderr)
-                            self._print_help()
-                            exit(1)
-                    else:
-                        try:
-                            for t in (float, int):
-                                t(arg_value)
-                                arg_value = str(arg_value)
-                            if not arg.num_as_str:
-                                print(f"Value should be a str. argument `{arg}`", file=sys.stderr)
-                                self._print_help()
-                                exit(1)
-                        except ValueError:
-                            pass
-
-
-                else:
-                    values = getattr(self.result, arg_name, [])
-                    try:
-                        casted_value = arg.item_type(arg_value)
-                    except Exception:
-                        raise ValueError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
-                    values.append(casted_value)
-                    arg_value = values
                 if arg.short is not None:
                     setattr(self.result, arg.short, arg_value)
                 if arg.long is not None:
@@ -367,14 +344,14 @@ class ArgMan:
         else:
             arg_name = self.aliases.get(name)
             if arg_name is None:
-                return False, 0
+                raise ArgParseError(f"Unknown argument '-{short_arg}'")
             arg = self.args.get(arg_name)
             if arg.type is bool:
                 arg_value = not arg.default
                 jump = 1
             else:
                 if next_arg is None:
-                    raise ValueError(f"Missing value for argument `{arg}`")
+                    raise ArgParseError(f"Missing value for argument '-{short_arg}'")
                 arg_value = next_arg
                 jump = 2
             if arg.type is not list:
@@ -382,16 +359,15 @@ class ArgMan:
                     try:
                         arg_value = arg.type(next_arg)
                     except ValueError:
-                        raise ValueError(f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
+                        raise ArgParseError(
+                            f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
                 else:
                     try:
                         for t in (float, int):
                             t(arg_value)
                             arg_value = str(arg_value)
                             if not arg.num_as_str:
-                                print(f"Value should be a str. argument `{arg.long or arg.short}`", file=sys.stderr)
-                                self._print_help()
-                                exit(1)
+                                raise ArgParseError(f"Value should be a str. argument `{arg.long or arg.short}`")
                     except ValueError:
                         pass
             else:
@@ -399,14 +375,14 @@ class ArgMan:
                 try:
                     casted_value = arg.item_type(arg_value)
                 except Exception:
-                    raise ValueError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
+                    raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
                 values.append(casted_value)
                 arg_value = values
             if arg.short is not None:
                 setattr(self.result, arg.short, arg_value)
             if arg.long is not None:
                 setattr(self.result, arg.long, arg_value)
-        return True, jump
+        return jump
 
     def _parse_long_arg(self):
         ...
@@ -438,12 +414,11 @@ class ArgMan:
                 self.pos_args[name].parsed = True
                 break
             else:
-                return -1, None
+                raise ArgParseError(f"Unknown argument `{arg}`")
         if not (infered_type is _arg.type):
             if not (_arg.type is str and _arg.num_as_str and infered_type in (int, float)):
-                return 1, _arg
+                raise ArgParseError(f"Type mismatch for `{_arg.name}` (expected {_arg.type.__name__})")
         setattr(self.result, name, arg)
-        return 0, None
 
     def parse(self):
         """
@@ -485,28 +460,28 @@ class ArgMan:
                 prefix = '-'
             else:
                 i += 1
-                code, pos_arg = self._parse_pos_arg(arg)
-                if code == -1:
-                    print(f"Unknown argument `{arg}`", file=sys.stderr)
+                try:
+                    self._parse_pos_arg(arg)
+                    continue
+                except ArgParseError as e:
+                    print(str(e), file=sys.stderr)
+                    print()
                     self._print_help()
                     exit(1)
-                elif code == 1:
-                    print(f"Type mismatch for `{pos_arg.name}` (expected {pos_arg.type.__name__})", file=sys.stderr)
-                    self._print_help()
-                    exit(1)
-                continue
 
             if prefix == '-':
                 next_arg = None
                 if i + 1 < len(self.argv):
                     next_arg = self.argv[i + 1]
-                status, jump = self._parse_short_arg(arg, next_arg)
-                if not status:
-                    print(f"Problem in parsing arguments", file=sys.stderr)
+                try:
+                    jump = self._parse_short_arg(arg, next_arg)
+                    i += jump
+                    continue
+                except ArgParseError as e:
+                    print(str(e), file=sys.stderr)
+                    print()
                     self._print_help()
                     exit(1)
-                i += jump
-                continue
 
             arg_name = arg.removeprefix(prefix)
             _arg_name = self.aliases.get(arg_name)
@@ -571,6 +546,7 @@ class ArgMan:
             print("Missing required arguments:", file=sys.stderr)
             for name in missing:
                 print(f"    {name}", file=sys.stderr)
+            print()
             self._print_help()
             exit(1)
 
