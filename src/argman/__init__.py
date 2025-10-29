@@ -1,1 +1,1 @@
-from .argman import ArgMan
+from .argman import ArgMan, ArgParseError
