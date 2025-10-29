@@ -365,7 +365,7 @@ class ArgMan:
                 values = getattr(self.result, arg_name, [])
                 try:
                     casted_value = arg.item_type(arg_value)
-                except Exception:
+                except ValueError:
                     raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
                 values.append(casted_value)
                 arg_value = values
@@ -406,7 +406,7 @@ class ArgMan:
             values = getattr(self.result, arg_name, [])
             try:
                 casted_value = arg.item_type(arg_value)
-            except Exception:
+            except ValueError:
                 raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
             values.append(casted_value)
             setattr(self.result, arg.long, values)
@@ -436,7 +436,7 @@ class ArgMan:
                 raise ArgParseError(f"Unknown argument `{arg}`")
         try:
             value = _arg.type(arg)
-        except Exception:
+        except ValueError:
             raise ArgParseError(f"Type mismatch for `{_arg.name}` (expected {_arg.type.__name__})")
         setattr(self.result, name, value)
 
