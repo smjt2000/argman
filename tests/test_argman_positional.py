@@ -71,40 +71,20 @@ class TestArgMan(unittest.TestCase):
         """Ensure entered positional values are correctly assigned to defined arguments."""
         sys.argv = ['prog', 'a.txt', '1000']
         parser = ArgMan()
-        parser.arg_pos('input', desc='Input file path', num_as_str=False)
+        parser.arg_pos('input', desc='Input file path')
         parser.arg_pos('max', desc='Maximum file size in byte', _type=int)
         args = parser.parse()
         self.assertEqual(args.input, 'a.txt')
         self.assertEqual(args.max, 1000)
 
-    def test_with_num_as_str(self):
-        """Ensure numeric string input is accepted when num_as_str=True (default)."""
-        sys.argv = ['prog', '06']
-        parser = ArgMan()
-        parser.arg_pos('month', desc='Month name')  # num_as_str=True is default
-        args = parser.parse()
-        self.assertEqual(args.month, 6)
-
-    def test_without_num_as_str(self):
-        """Ensure numeric string input causes error when num_as_str=False."""
-        capture_err = io.StringIO()
-        sys.stderr = capture_err
-        sys.argv = ['prog', '06']
-        parser = ArgMan()
-        parser.arg_pos('month', desc='Month name', num_as_str=False)
-        with self.assertRaises(SystemExit):
-            parser.parse()
-        sys.stderr = sys.__stderr__
-        self.assertIn('Type mismatch for `month` (expected str)', capture_err.getvalue())
-
     def test_order_matters(self):
         """Ensure positional argument order is preserved and values are assigned correctly."""
         sys.argv = ['prog', 'a.txt', 'b.txt', 'mike', 'developer']
         parser = ArgMan()
-        parser.arg_pos('input', num_as_str=False)
-        parser.arg_pos('output', num_as_str=False)
-        parser.arg_pos('name', num_as_str=False)
-        parser.arg_pos('role', num_as_str=False)
+        parser.arg_pos('input')
+        parser.arg_pos('output')
+        parser.arg_pos('name')
+        parser.arg_pos('role')
         args = parser.parse()
         self.assertEqual(args.input, 'a.txt')
         self.assertEqual(args.output, 'b.txt')
