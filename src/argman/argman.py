@@ -389,8 +389,49 @@ class ArgMan:
                 setattr(self.result, arg.long, arg_value)
         return jump
 
-    def _parse_long_arg(self):
-        ...
+    def _parse_long_arg(self, long_arg: str, next_arg: str = None):
+        jump = 1
+        name = long_arg.removeprefix('--')
+        arg_name = self.aliases.get(name)
+        if arg_name is None:
+            raise ArgParseError(f"Unknown argument '{long_arg}'")
+        arg = self.args.get(arg_name)
+        if arg.type is bool:
+            arg_value = not arg.default
+            setattr(self.result, arg.long, arg_value)
+            if arg.short:
+                setattr(self.result, arg.short, arg_value)
+            return jump
+        if next_arg is None:
+            raise ArgParseError(f"Missing value for argument '{long_arg}'")
+        arg_value = next_arg
+        jump = 2
+        if arg.type is not list:
+            if arg.type is not str:
+                try:
+                    arg_value = arg.type(next_arg)
+                    setattr(self.result, arg.long, arg_value)
+                    if arg.short:
+                        setattr(self.result, arg.short, arg_value)
+                except ValueError:
+                    raise ArgParseError(
+                        f"Value should be a {arg.type.__name__}. argument `{arg.long}`"
+                    )
+            else:
+                setattr(self.result, arg.long, arg_value)
+                if arg.short:
+                    setattr(self.result, arg.short, arg_value)
+        else:
+            values = getattr(self.result, arg_name, [])
+            try:
+                casted_value = arg.item_type(arg_value)
+            except Exception:
+                raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
+            values.append(casted_value)
+            setattr(self.result, arg.long, values)
+            if arg.short:
+                setattr(self.result, arg.short, values)
+        return jump
 
     def _parse_pos_arg(self, arg):
         infered_type = str
@@ -481,57 +522,18 @@ class ArgMan:
                     continue
                 except ArgParseError as e:
                     self._print_err(str(e))
-
-            arg_name = arg.removeprefix(prefix)
-            _arg_name = self.aliases.get(arg_name)
-            if _arg_name is None:
-                print(f"Unknown argument `{arg}`", file=sys.stderr)
-                i += 1
-                continue
-            _arg = self.args.get(_arg_name)
-            if _arg.type == bool:
-                arg_value = not _arg.default
-                i += 1
-            else:
-                if i + 1 >= len(self.argv):
-                    self._print_err(f"Missing value for argument '{arg}'")
-                arg_value = self.argv[i + 1]
-                if _arg.type is not list:
-                    if _arg.type is not str:
-                        try:
-                            arg_value = _arg.type(arg_value)
-                        except ValueError:
-                            self._print_err(f"Value should be a {_arg.type.__name__}. argument `{arg}`")
-                    else:
-                        try:
-                            for t in (float, int):
-                                t(arg_value)
-                                arg_value = str(arg_value)
-                            if not _arg.num_as_str:
-                                self._print_err(f"Value should be a str. argument `{arg}`")
-                        except ValueError:
-                            pass
-                i += 2
-
-            if _arg.type is not list:
-                if _arg.short is not None:
-                    setattr(self.result, _arg.short, arg_value)
-                if _arg.long is not None:
-                    setattr(self.result, _arg.long, arg_value)
-            else:
-                values = getattr(self.result, _arg_name)
-                if values is None:
-                    values = []
+            elif prefix == '--':
+                next_arg = None
+                if i + 1 < len(self.argv):
+                    next_arg = self.argv[i + 1]
                 try:
-                    casted_value = _arg.item_type(arg_value)  # noqa
-                except Exception:
-                    self._print_err(f"Value '{arg_value}' should be of type {_arg.item_type.__name__}")  # noqa
-                values.append(casted_value)
-                if _arg.short is not None:
-                    setattr(self.result, _arg.short, values)
-                if _arg.long is not None:
-                    setattr(self.result, _arg.long, values)
+                    jump = self._parse_long_arg(arg, next_arg)
+                    i += jump
+                    continue
+                except ArgParseError as e:
+                    self._print_err(str(e))
 
+            raise AssertionError(f"Unreachable `{arg}`")
         missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required and not a.default]
         if len(missing) > 0:
             message = "Missing required arguments:\n"
