@@ -447,7 +447,7 @@ class ArgMan:
             except ValueError:
                 pass
         if len(self.pos_args) < 1:
-            return -1, None
+            raise ArgParseError(f"Unknown argument `{arg}`")
         name = _arg = None
 
         req = [a for a in self.pos_args.values() if not a.parsed and a.required]
