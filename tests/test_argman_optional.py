@@ -119,7 +119,7 @@ class TestArgMan(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse()
         sys.stderr = sys.__stderr__
-        self.assertIn("Missing value for argument `--num`", capture_err.getvalue())
+        self.assertIn("Missing value for argument '--num'", capture_err.getvalue())
 
     def test_unknown_argument(self):
         """Unknown arguments should not break the parser."""
@@ -128,9 +128,10 @@ class TestArgMan(unittest.TestCase):
         sys.argv = ['prog', '--unknown', '5']
         parser = ArgMan()
         parser.arg_int(long='num', default=1)
-        args = parser.parse()
+        with self.assertRaises(SystemExit):
+            parser.parse()
         sys.stderr = sys.__stderr__
-        self.assertIn("Unknown argument `--unknown`", capture_err.getvalue())  # unaffected
+        self.assertIn("Unknown argument '--unknown'", capture_err.getvalue())  # unaffected
 
 
 if __name__ == '__main__':
