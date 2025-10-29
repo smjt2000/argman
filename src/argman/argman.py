@@ -500,20 +500,17 @@ class ArgMan:
         i = 0
         while i < len(self.argv):
             arg = self.argv[i]
-            prefix = None
             if arg.startswith('--'):
-                prefix = '--'
-            elif arg.startswith('-'):
-                prefix = '-'
-            else:
-                i += 1
+                next_arg = None
+                if i + 1 < len(self.argv):
+                    next_arg = self.argv[i + 1]
                 try:
-                    self._parse_pos_arg(arg)
+                    jump = self._parse_long_arg(arg, next_arg)
+                    i += jump
                     continue
                 except ArgParseError as e:
                     self._print_err(str(e))
-
-            if prefix == '-':
+            elif arg.startswith('-'):
                 next_arg = None
                 if i + 1 < len(self.argv):
                     next_arg = self.argv[i + 1]
@@ -523,13 +520,10 @@ class ArgMan:
                     continue
                 except ArgParseError as e:
                     self._print_err(str(e))
-            elif prefix == '--':
-                next_arg = None
-                if i + 1 < len(self.argv):
-                    next_arg = self.argv[i + 1]
+            else:
+                i += 1
                 try:
-                    jump = self._parse_long_arg(arg, next_arg)
-                    i += jump
+                    self._parse_pos_arg(arg)
                     continue
                 except ArgParseError as e:
                     self._print_err(str(e))
