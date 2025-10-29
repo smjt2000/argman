@@ -8,8 +8,8 @@ class _Arg:
     short: str = None
     long: str = None
     type: type = None
+    item_type: type = str
     default: int | float | str | list = None
-    num_as_str: bool = False
     desc: str = None
 
 
@@ -19,7 +19,6 @@ class _PosArg:
     type: type = str
     default: int | float | str = None
     required: bool = False
-    num_as_str: bool = True
     parsed: bool = False
     desc: str = None
 
@@ -69,7 +68,7 @@ class ArgMan:
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
 
-    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None, num_as_str=False):
+    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None):
         """
         Internal helper for registering an argument.
         """
@@ -81,7 +80,7 @@ class ArgMan:
         main_name = long or short
         arg = _Arg(
             short=short, long=_long, type=_type,
-            default=default, desc=desc, num_as_str=num_as_str
+            default=default, desc=desc
         )
         self.args[main_name] = arg
         setattr(self.result, main_name, default)
@@ -155,7 +154,7 @@ class ArgMan:
             exit(1)
         raise ArgParseError(message)
 
-    def arg_pos(self, name: str, *, required=True, default=None, _type=str, num_as_str=True, desc=None):
+    def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
         """
         Define a positional argument.
 
@@ -164,13 +163,11 @@ class ArgMan:
             required (bool, optional): Whether the argument must be provided. Defaults to True.
             default (any, optional): Default value for the argument if not provided.
             _type (type, optional): Type to which the argument value should be converted. Defaults to str.
-            num_as_str (bool, optional): Determines wheter numeric inputs should be accepted as valid strings when `_type` is `str`.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
             ValueError:
                 - If the argument is required but no default value is provided.
-                - If `-type` is `str` and `num_as_str=False`, and default value is numeric.
 
         Examples:
             >>> am = ArgMan()
@@ -179,14 +176,11 @@ class ArgMan:
             >>> print(args.input_path)
         """
         if default is not None and not isinstance(default, _type):
-            if _type is str and not num_as_str:
-                raise ValueError("Type of default value should be the same as defined type")
-            if _type is not str:
-                raise ValueError("Type of default value should be the same as defined type")
+            raise ValueError("Type of default value should be the same as defined type")
         arg = _PosArg(
             name=name, type=_type,
             default=default, desc=desc,
-            required=required, num_as_str=num_as_str
+            required=required
         )
         self.pos_args[name] = arg
         setattr(self.result, name, default)
@@ -242,7 +236,7 @@ class ArgMan:
         self.__set_arg(float, short, long, float(default), desc)
         return None
 
-    def arg_str(self, *, short: str = None, long: str = None, default=None, num_as_str=True, desc=None):
+    def arg_str(self, *, short: str = None, long: str = None, default=None, desc=None):
         """
         Defines an optional string argument.
 
@@ -250,7 +244,6 @@ class ArgMan:
             short (str, optional): Short name for the argument (e.g., `-a`).
             long (str, optional): Long name for the argument (e.g., `--author`).
             default (str, required): Default str value for the argument.
-            num_as_str (bool, optional): Determines wheter numeric inputs should be accepted as valid strings when `_type` is `str`.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -263,9 +256,9 @@ class ArgMan:
             >>> print(args.author)
             'John Doe'
         """
-        if default is not None and not isinstance(default, str) and not num_as_str:
+        if default is not None and not isinstance(default, str):
             raise TypeError("default must be a str")
-        self.__set_arg(str, short, long, default, desc, num_as_str)
+        self.__set_arg(str, short, long, default, desc)
         return None
 
     def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None):
@@ -322,7 +315,7 @@ class ArgMan:
             if not isinstance(default, list):
                 raise TypeError("default must be a list")
         self.__set_arg(list, short, long, default, desc)
-        self.args[long or short].item_type = item_type  # noqa
+        self.args[long or short].item_type = item_type
         return None
 
     # TODO: make this function work without length check, to make it smaller
@@ -364,21 +357,11 @@ class ArgMan:
                 arg_value = next_arg
                 jump = 2
             if arg.type is not list:
-                if arg.type is not str:
-                    try:
-                        arg_value = arg.type(next_arg)
-                    except ValueError:
-                        raise ArgParseError(
-                            f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
-                else:
-                    try:
-                        for t in (float, int):
-                            t(arg_value)
-                            arg_value = str(arg_value)
-                            if not arg.num_as_str:
-                                raise ArgParseError(f"Value should be a str. argument `{arg.long or arg.short}`")
-                    except ValueError:
-                        pass
+                try:
+                    arg_value = arg.type(next_arg)
+                except ValueError:
+                    raise ArgParseError(
+                        f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
             else:
                 values = getattr(self.result, arg_name, [])
                 try:
@@ -411,20 +394,15 @@ class ArgMan:
         arg_value = next_arg
         jump = 2
         if arg.type is not list:
-            if arg.type is not str:
-                try:
-                    arg_value = arg.type(next_arg)
-                    setattr(self.result, arg.long, arg_value)
-                    if arg.short:
-                        setattr(self.result, arg.short, arg_value)
-                except ValueError:
-                    raise ArgParseError(
-                        f"Value should be a {arg.type.__name__}. argument `{arg.long}`"
-                    )
-            else:
+            try:
+                arg_value = arg.type(next_arg)
                 setattr(self.result, arg.long, arg_value)
                 if arg.short:
                     setattr(self.result, arg.short, arg_value)
+            except ValueError:
+                raise ArgParseError(
+                    f"Value should be a {arg.type.__name__}. argument `{arg.long}`"
+                )
         else:
             values = getattr(self.result, arg_name, [])
             try:
@@ -438,14 +416,6 @@ class ArgMan:
         return jump
 
     def _parse_pos_arg(self, arg):
-        infered_type = str
-        for t in (int, float):
-            try:
-                arg = t(arg)
-                infered_type = t
-                break
-            except ValueError:
-                pass
         if len(self.pos_args) < 1:
             raise ArgParseError(f"Unknown argument `{arg}`")
         name = _arg = None
@@ -465,10 +435,11 @@ class ArgMan:
                 break
             else:
                 raise ArgParseError(f"Unknown argument `{arg}`")
-        if not (infered_type is _arg.type):
-            if not (_arg.type is str and _arg.num_as_str and infered_type in (int, float)):
-                raise ArgParseError(f"Type mismatch for `{_arg.name}` (expected {_arg.type.__name__})")
-        setattr(self.result, name, arg)
+        try:
+            value = _arg.type(arg)
+        except Exception:
+            raise ArgParseError(f"Type mismatch for `{_arg.name}` (expected {_arg.type.__name__})")
+        setattr(self.result, name, value)
 
     def parse(self):
         """
