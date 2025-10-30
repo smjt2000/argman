@@ -185,6 +185,11 @@ class ArgMan:
         """
         if default is not None and not isinstance(default, _type):
             raise ValueError("Type of default value should be the same as defined type")
+        if required is True:
+            no_req = [name for name, arg in self.pos_args.items() if not arg.required]
+            if no_req:
+                raise ValueError(
+                    "Required positional argument cannot be defined after an optional one. All required arguments must come first.")
         arg = _PosArg(
             name=name, type=_type,
             default=default, desc=desc,
