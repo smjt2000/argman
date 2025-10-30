@@ -1,7 +1,7 @@
 import unittest
 import sys
 import io
-from argman import ArgMan
+from argman import ArgMan, ArgParseError
 
 
 class TestArgMan(unittest.TestCase):
@@ -116,6 +116,25 @@ class TestArgMan(unittest.TestCase):
         parser.arg_bool(long='verbose', default=True)
         args = parser.parse()
         self.assertFalse(args.verbose)
+
+    def test_equal_sign(self):
+        """Should set value correctly"""
+        sys.argv = ['prog', '--file=a.txt']
+        parser = ArgMan()
+        parser.arg_str(long='file', short='f')
+        args = parser.parse()
+        self.assertEqual(args.file, 'a.txt')
+        self.assertEqual(args.f, 'a.txt')
+
+    def test_equal_sign_short(self):
+        """Should raise error"""
+        sys.argv = ['prog', '-f=a.txt']
+        parser = ArgMan(exit_on_err=False)
+        parser.arg_str(long='file', short='f')
+        with self.assertRaises(ArgParseError) as cm:
+            parser.parse()
+        exception = cm.exception
+        self.assertIn("Short option '-f' does not support '=' syntax.", str(exception))
 
     def test_missing_value_error(self):
         """Should raise ValueError if a non-bool argument is missing a value."""
