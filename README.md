@@ -2,6 +2,7 @@
 
 A lightweight, zero-dependency argument parser for Python CLI tools — simple, testable, and intuitive.
 
+![ArgMan example code](assets/ArgMan.png)
 ---
 
 ## Features
