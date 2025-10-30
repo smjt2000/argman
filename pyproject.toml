@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "argman"
 version = "0.2.0"
 description = "A lightweight argument manager for Python CLI tools"
-authors = [{ text = "Seyed Mohammad Javad Taghipoor", email = "smjavadt.1379@gmail.com"}]
+authors = [{ name = "Seyed Mohammad Javad Taghipoor", email = "smjavadt.1379@gmail.com"}]
 readme = "README.md"
 license = { text = "LGPL-3.0-or-later" }
 requires-python = ">=3.10"
