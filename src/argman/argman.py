@@ -63,6 +63,7 @@ class ArgMan:
         self.exit_on_err = exit_on_err
         self.argv = sys.argv[1:]
         self.argc = len(self.argv)
+        self.pos_only = False
         self.args: dict[str, _Arg] = {}
         self.pos_args: OrderedDict[str, _PosArg] = OrderedDict()
         self.aliases: dict[str, str] = {}
@@ -491,6 +492,17 @@ class ArgMan:
         i = 0
         while i < len(self.argv):
             arg = self.argv[i]
+            if self.pos_only:
+                i += 1
+                try:
+                    self._parse_pos_arg(arg)
+                    continue
+                except ArgParseError as e:
+                    self._print_err(str(e))
+            if arg == '--':
+                self.pos_only = True
+                i += 1
+                continue
             if arg.startswith('--'):
                 if '=' in arg:
                     arg, next_arg = arg.split('=', 1)
