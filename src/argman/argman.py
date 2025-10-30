@@ -485,9 +485,6 @@ class ArgMan:
             >>> print(args.num, args.verbose)
             10 False
         """
-        if len(self.argv) > 0 and self.argv[0] == '--help':
-            self._print_help()
-            exit(0)
 
         i = 0
         while i < len(self.argv):
@@ -499,6 +496,11 @@ class ArgMan:
                     continue
                 except ArgParseError as e:
                     self._print_err(str(e))
+
+            if arg == '--help':
+                self._print_help()
+                exit(0)
+
             if arg == '--':
                 self.pos_only = True
                 i += 1
