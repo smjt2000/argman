@@ -1,133 +1,53 @@
 # ArgMan
 
-**ArgMan** is a lightweight argument manager for Python CLI tools —
-a simple, zero-dependency alternative to `argparse`.
+A lightweight, zero-dependency argument parser for Python CLI tools — simple, testable, and intuitive.
 
 ---
 
 ## Features
 
-- Short & long aliases (`-n` / `--num`)
-- Type-safe parsing (`int`, `float`, `str`, `bool`, `list`)
-- Default values
-- Boolean toggles
-- Repeated arguments via `arg_list`
-- Clean, testable API
+- Short (`-v`) and long (`--verbose`) flags
+- Type-safe parsing: `int`, `float`, `str`, `bool`, `list`
+- Default values and boolean toggles
+- Repeated arguments with `arg_list`
+- Positional arguments
+- Automatic `--no-flag` for booleans
+- `--arg=value` and `--` terminator support
+- Clean help and error messages
 
 ---
 
-## Defining Arguments
+## Documentation
 
-#### `arg_int(short=None, long=None, default=None, desc=None)`
-
-Defines an integer argument.
-
-#### `arg_float(short=None, long=None, default=None, desc=None)`
-
-Defines a float argument.
-
-#### `arg_str(short=None, long=None, default=None, desc=None)`
-
-Defines a string argument.
-
-#### `arg_bool(short=None, long=None, default=None, desc=None)`
-
-Defines a boolean argument.
-
-#### `arg_list(short=None, long=None, default=None, item_type=str desc=None)`
-
-Defines an multi-use argument collector.
-
-#### `arg_pos(name, default=None, _type=str, desc=None)`
-
-Defines a positional argument.
-
-## Usage
-
-```python
-from argman import ArgMan
-
-am = ArgMan()
-am.arg_int(short='n', long='num', default=5, desc='Number of nodes')
-am.arg_float(short='r', long='rate', default=1.0, desc='Payment rate')
-am.arg_str(short='a', long='author', default='John Doe', desc='Author name')
-am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose output')
-am.arg_list(short='f', long='files', desc='Input files')
-am.arg_list(
-    long='numbers', desc='List of numbers',
-    item_type=int  # try cast each list item to integer
-)
-am.arg_pos('price', _type=int)
-
-args = am.parse()
-print(args.n)  # args.num
-print(args.rate)  # args.r
-print(args.author)  # args.a
-print(args.verbose)  # args.v
-print(args.files)  # args.f
-print(args.numbers)
-print(args.price)
-
-```
-
-### Run
-
-```bash
-python3 program.py 5000 -n 10 --rate 1.2 -a Mike -v -f file1.txt --files file2.txt --numbers 5 --numbers 10
-```
-
-### Output
-
-```
-10
-1.2
-Mike
-['file1.txt', 'file2.txt']
-[5, 10]
-5000
-```
+Usage examples and API reference: [docs/](docs/)
 
 ---
 
 ## Running Tests
 
-```
+```bash
 python -m unittest discover tests
 ```
 
----
-
 ## Roadmap
 
-### v0.1 — Core Functionality
+v0.1 — Core Functionality
 
-- [x] Basic argument parsing
-- [x] Short & long aliases
-- [x] Type conversion (int, float, str, bool)
-- [x] Default values
-- [x] Positional argument support
-- [x] Help message support
+- [x] Complete
 
-### v0.2 — Extended Features
+v0.2 — Extended Features
 
-- [x] arg_list (multi-use collector)
-- [ ] Custom error messages
-- [ ] Config file parsing
-- [ ] Subcommands support (like git add / git commit)
+- [x] arg_list, --no-flag, --arg=value, -- support
+- [ ] Custom error messages, config files, subcommands
 
-### v0.3 — Docs & Publish
+v0.3 — Docs & Publish
 
-- [x] Add docstrings
+- [x] Docs ready
 - [ ] Publish to PyPI
 
-### v0.4 — Validation & Customization
+v0.4 — Validation & Customization
 
-- [ ] Argument validators (e.g. validator=lambda x: x > 0)
-- [ ] Value formatters (e.g. formatter=str.lower)
-- [ ] Requires dependencies between arguments
-- [ ] Customizable error & help handlers
-
----
+- [ ] Validators, formatters, dependencies, custom handlers
 
 ## License
 
