@@ -74,6 +74,10 @@ class ArgMan:
         """
         if short is None and long is None:
             raise ValueError("At least one of 'short' or 'long' must be provided")
+        if short is not None and (not isinstance(short, str) or len(short) != 1):
+            raise ValueError("Short name must be a single character")
+        if long is not None and (not isinstance(long, str) or len(long) < 2):
+            raise ValueError("Long name must be at least 2 characters")
         _long = long
         if _long is not None:
             _long = _long.replace('-', '_')
