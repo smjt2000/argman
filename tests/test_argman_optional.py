@@ -92,7 +92,7 @@ class TestArgMan(unittest.TestCase):
         self.assertIn("should be of type int", capture_err.getvalue())
 
     def test_parse_bool_flag(self):
-        """Boolean flag should toggle when present."""
+        """Boolean flag should set value to True."""
         sys.argv = ['prog', '--run']
         parser = ArgMan()
         parser.arg_bool(short='r', long='run', default=False)
@@ -100,14 +100,22 @@ class TestArgMan(unittest.TestCase):
         self.assertTrue(args.run)
 
     def test_parse_multiple_bool_flags(self):
-        """Boolean flag should toggle when present."""
+        """Boolean flag should set value to True."""
         sys.argv = ['prog', '-rp']
         parser = ArgMan()
         parser.arg_bool(short='r', long='run', default=False)
-        parser.arg_bool(short='p', long='print', default=False)
+        parser.arg_bool(short='p', long='print', default=True)
         args = parser.parse()
         self.assertTrue(args.run)
         self.assertTrue(args.print)
+
+    def test_bool_no_flag(self):
+        """boolean flag with '--no-flag' should set value to False."""
+        sys.argv = ['prog', '--no-verbose']
+        parser = ArgMan()
+        parser.arg_bool(long='verbose', default=True)
+        args = parser.parse()
+        self.assertFalse(args.verbose)
 
     def test_missing_value_error(self):
         """Should raise ValueError if a non-bool argument is missing a value."""
