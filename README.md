@@ -52,7 +52,7 @@ v0.2 — Extended Features
 v0.3 — Docs & Publish
 
 - [x] Docs ready
-- [ ] Publish to PyPI
+- [x] Publish to PyPI
 
 v0.4 — Validation & Customization
 
