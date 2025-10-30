@@ -23,6 +23,14 @@ Usage examples and API reference: [docs/](docs/)
 
 ---
 
+## Installation
+
+You can install __ArgMan__ directly from [PyPi](https://pypi.org/project/argman/):
+
+```shell
+pip install argman
+```
+
 ## Running Tests
 
 ```bash
