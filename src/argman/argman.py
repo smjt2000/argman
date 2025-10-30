@@ -359,7 +359,7 @@ class ArgMan:
                 arg_name = name[i]
                 alias = self.aliases.get(arg_name)
                 if alias is None:
-                    raise ArgParseError(f"Unknown argument '-{arg_name}'")
+                    raise ArgParseError(f"Unknown argument '-{arg_name}' in '-{short_arg}'")
                 arg = self.args.get(alias)
                 if arg.type is bool:
                     arg_value = True
