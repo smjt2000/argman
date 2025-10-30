@@ -287,6 +287,9 @@ class ArgMan:
         if not isinstance(default, bool):
             raise TypeError("default must be a bool")
         self.__set_arg(bool, short, long, default, desc)
+        if default is True and long is not None:
+            no_long = f"no-{long}"
+            self.aliases[no_long] = long
         return None
 
     def arg_list(self, *, short: str = None, long: str = None, default=None, item_type: type = str, desc=None):
@@ -335,14 +338,13 @@ class ArgMan:
                     raise ArgParseError(f"Unknown argument '-{short_arg}'")
                 arg = self.args.get(arg_name)
                 if arg.type is bool:
-                    arg_value = not arg.default
+                    arg_value = True
                     i += 1
                 else:
                     raise ArgParseError(
                         f"Option '-{arg_name}' requires an argument and cannot be clustered with other short options.")
 
-                if arg.short is not None:
-                    setattr(self.result, arg.short, arg_value)
+                setattr(self.result, arg.short, arg_value)
                 if arg.long is not None:
                     setattr(self.result, arg.long, arg_value)
         else:
@@ -351,8 +353,12 @@ class ArgMan:
                 raise ArgParseError(f"Unknown argument '-{short_arg}'")
             arg = self.args.get(arg_name)
             if arg.type is bool:
-                arg_value = not arg.default
+                arg_value = True
                 jump = 1
+                setattr(self.result, arg.short, arg_value)
+                if arg.long:
+                    setattr(self.result, arg.long, arg_value)
+                return jump
             else:
                 if next_arg is None:
                     raise ArgParseError(f"Missing value for argument '-{short_arg}'")
@@ -372,8 +378,7 @@ class ArgMan:
                     raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
                 values.append(casted_value)
                 arg_value = values
-            if arg.short is not None:
-                setattr(self.result, arg.short, arg_value)
+            setattr(self.result, arg.short, arg_value)
             if arg.long is not None:
                 setattr(self.result, arg.long, arg_value)
         return jump
@@ -386,7 +391,10 @@ class ArgMan:
             raise ArgParseError(f"Unknown argument '{long_arg}'")
         arg = self.args.get(arg_name)
         if arg.type is bool:
-            arg_value = not arg.default
+            if long_arg.startswith('--no-'):
+                arg_value = False
+            else:
+                arg_value = True
             setattr(self.result, arg.long, arg_value)
             if arg.short:
                 setattr(self.result, arg.short, arg_value)
