@@ -284,15 +284,26 @@ class ArgMan:
             default (bool, required): Default bool value for the argument.
             desc (str, optional): Description for the argument, used in help messages.
 
+        Behavior:
+            - If `default=False` (default), the flag enables the feature:
+            `--run` → `run = True`.
+            - If `default=True`, the flag still enables the feature (`--verbose` → `verbose = True`),
+            and a negation flag `--no-<long>` is **automatically added** to disable it:
+            `--no-verbose` → `verbose = False`.
+            - The `--no-<long>` negation flag is **only generated if `long` is provided**.
+            Short-only boolean flags (e.g., `-v` with no `--verbose`) cannot be negated.
+
         Raises:
             TypeError: If the provided default value is not a bool.
+            ValueError: If neither `short` nor `long` is provided, or if name lengths are invalid.
 
         Examples:
             >>> am = ArgMan()
             >>> am.arg_bool(short='r', long='run', default=False, desc='Run the program')
+            >>> am.arg_bool(long='verbose', default=True, desc='Enable verbose output')
             >>> args = am.parse()
-            >>> print(args.run)
-            False
+            >>> print(args.run)      # False by default, True if --run is passed
+            >>> print(args.verbose)  # True by default, False if --no-verbose is passed
         """
         if not isinstance(default, bool):
             raise TypeError("default must be a bool")
