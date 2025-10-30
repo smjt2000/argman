@@ -1,7 +1,7 @@
 import unittest
 import sys
 import io
-from argman import ArgMan
+from argman import ArgMan, ArgParseError
 
 
 class TestArgMan(unittest.TestCase):
@@ -90,6 +90,45 @@ class TestArgMan(unittest.TestCase):
         self.assertEqual(args.output, 'b.txt')
         self.assertEqual(args.name, 'mike')
         self.assertEqual(args.role, 'developer')
+
+    def test_required_after_optional_definition(self):
+        """Defining required after optional raises ValueError."""
+        parser = ArgMan()
+        parser.arg_pos('input', required=False)
+        with self.assertRaises(ValueError) as cm:
+            parser.arg_pos('output', required=True)
+        self.assertIn("Required positional argument cannot be defined after an optional one", str(cm.exception))
+
+    def test_double_dash_with_extra_args(self):
+        """-- followed by too many positionals raises error."""
+        sys.argv = ['prog', '--', 'a.txt', 'b.txt', 'c.txt']
+        parser = ArgMan()
+        parser.arg_pos('file1')
+        parser.arg_pos('file2')
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            parser.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Unknown argument 'c.txt'", capture_err.getvalue())
+
+    def test_long_name_with_dashes(self):
+        """Long name with dashes works and aliases correctly."""
+        sys.argv = ['prog', '--my-flag', '42']
+        parser = ArgMan()
+        parser.arg_int(long='my-flag', default=0)
+        args = parser.parse()
+        self.assertEqual(args.my_flag, 42)  # stored as my_flag
+        # Note: you can't access via args['my-flag'], but that's fine
+
+    def test_exit_on_err_false_mode(self):
+        """When exit_on_err=False, errors raise ArgParseError."""
+        sys.argv = ['prog', '--unknown']
+        parser = ArgMan(exit_on_err=False)
+        parser.arg_int(long='num', default=1)
+        with self.assertRaises(ArgParseError) as cm:
+            parser.parse()
+        self.assertIn("Unknown argument", str(cm.exception))
 
 
 if __name__ == '__main__':

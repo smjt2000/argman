@@ -160,6 +160,74 @@ class TestArgMan(unittest.TestCase):
         sys.stderr = sys.__stderr__
         self.assertIn("Unknown argument '--unknown'", capture_err.getvalue())  # unaffected
 
+    def test_bool_no_flag_requires_long(self):
+        """--no-flag is only generated if long name is provided."""
+        sys.argv = ['prog', '--no-quiet']
+        parser = ArgMan()
+        # Define boolean with ONLY short name
+        parser.arg_bool(short='q', default=True)
+        # --no-quiet should be unknown because no long name was given
+        with self.assertRaises(SystemExit):
+            parser.parse()
+
+    def test_bool_default_true_without_flag(self):
+        """Boolean with default=True remains True if flag not passed."""
+        sys.argv = ['prog']
+        parser = ArgMan()
+        parser.arg_bool(long='debug', default=True)
+        args = parser.parse()
+        self.assertTrue(args.debug)
+
+    def test_bool_default_true_with_flag(self):
+        """Boolean with default=True stays True when flag is passed."""
+        sys.argv = ['prog', '--debug']
+        parser = ArgMan()
+        parser.arg_bool(long='debug', default=True)
+        args = parser.parse()
+        self.assertTrue(args.debug)
+
+    def test_mix_short_long(self):
+        """Mix short and long arguments."""
+        sys.argv = ['prog', '-v', '--file=output.txt', '-n', '5']
+        parser = ArgMan()
+        parser.arg_bool(short='v', long='verbose', default=False)
+        parser.arg_str(short='f', long='file', default='')
+        parser.arg_int(short='n', long='num', default=0)
+        args = parser.parse()
+        self.assertTrue(args.verbose)
+        self.assertEqual(args.file, 'output.txt')
+        self.assertEqual(args.num, 5)
+
+    def test_short_with_value(self):
+        """Short argument with space-separated value."""
+        sys.argv = ['prog', '-f', 'data.csv']
+        parser = ArgMan()
+        parser.arg_str(short='f', long='file', default='')
+        args = parser.parse()
+        self.assertEqual(args.f, 'data.csv')
+
+    def test_empty_value_equal_sign(self):
+        """--arg= with empty value."""
+        sys.argv = ['prog', '--name=']
+        parser = ArgMan()
+        parser.arg_str(long='name', default='default')
+        args = parser.parse()
+        self.assertEqual(args.name, '')
+
+    def test_unknown_in_short_cluster(self):
+        """Error message should include original cluster."""
+        sys.argv = ['prog', '-vxq']
+        parser = ArgMan()
+        parser.arg_bool(short='v', default=False)
+        parser.arg_bool(short='q', default=False)
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            parser.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("-x", capture_err.getvalue())
+        self.assertIn("-vxq", capture_err.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main()
