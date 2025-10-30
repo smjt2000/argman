@@ -31,7 +31,7 @@ class TestArgMan(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse()
         sys.stderr = sys.__stderr__
-        self.assertIn('Type mismatch for `year` (expected int)', capture_err.getvalue())
+        self.assertIn("Type mismatch for 'year' (expected int)", capture_err.getvalue())
 
     def test_missing_required(self):
         """Ensure error is raised when a required positional argument is missing."""
@@ -57,7 +57,7 @@ class TestArgMan(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse()
         sys.stderr = sys.__stderr__
-        self.assertIn('Unknown argument `b.txt`', capture_err.getvalue())
+        self.assertIn("Unknown argument 'b.txt'", capture_err.getvalue())
 
     def test_return_default_value(self):
         """Ensure default value is returned when no input is provided for the argument."""
