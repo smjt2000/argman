@@ -341,10 +341,10 @@ class ArgMan:
             i = 0
             while i < len(name):
                 arg_name = name[i]
-                arg_name = self.aliases.get(arg_name)
-                if arg_name is None:
-                    raise ArgParseError(f"Unknown argument '-{short_arg}'")
-                arg = self.args.get(arg_name)
+                alias = self.aliases.get(arg_name)
+                if alias is None:
+                    raise ArgParseError(f"Unknown argument '-{arg_name}'")
+                arg = self.args.get(alias)
                 if arg.type is bool:
                     arg_value = True
                     i += 1
@@ -358,7 +358,7 @@ class ArgMan:
         else:
             arg_name = self.aliases.get(name)
             if arg_name is None:
-                raise ArgParseError(f"Unknown argument '-{short_arg}'")
+                raise ArgParseError(f"Unknown argument '-{name}'")
             arg = self.args.get(arg_name)
             if arg.type is bool:
                 arg_value = True
@@ -369,7 +369,7 @@ class ArgMan:
                 return jump
             else:
                 if next_arg is None:
-                    raise ArgParseError(f"Missing value for argument '-{short_arg}'")
+                    raise ArgParseError(f"Missing value for argument '-{name}'")
                 arg_value = next_arg
                 jump = 2
             if arg.type is not list:
@@ -377,7 +377,7 @@ class ArgMan:
                     arg_value = arg.type(next_arg)
                 except ValueError:
                     raise ArgParseError(
-                        f"Value should be a {arg.type.__name__}. argument `{arg.long or arg.short}`")
+                        f"Value should be a {arg.type.__name__}. argument '{arg.long or arg.short}'")
             else:
                 values = getattr(self.result, arg_name, [])
                 try:
@@ -396,7 +396,7 @@ class ArgMan:
         name = long_arg.removeprefix('--')
         arg_name = self.aliases.get(name)
         if arg_name is None:
-            raise ArgParseError(f"Unknown argument '{long_arg}'")
+            raise ArgParseError(f"Unknown argument '--{name}'")
         arg = self.args.get(arg_name)
         if arg.type is bool:
             if long_arg.startswith('--no-'):
@@ -408,7 +408,7 @@ class ArgMan:
                 setattr(self.result, arg.short, arg_value)
             return jump
         if next_arg is None:
-            raise ArgParseError(f"Missing value for argument '{long_arg}'")
+            raise ArgParseError(f"Missing value for argument '--{name}'")
         arg_value = next_arg
         jump = 2
         if arg.type is not list:
@@ -419,7 +419,7 @@ class ArgMan:
                     setattr(self.result, arg.short, arg_value)
             except ValueError:
                 raise ArgParseError(
-                    f"Value should be a {arg.type.__name__}. argument `{arg.long}`"
+                    f"Value should be a {arg.type.__name__}. argument '{arg.long}'"
                 )
         else:
             values = getattr(self.result, arg_name, [])
@@ -435,7 +435,7 @@ class ArgMan:
 
     def _parse_pos_arg(self, arg):
         if len(self.pos_args) < 1:
-            raise ArgParseError(f"Unknown argument `{arg}`")
+            raise ArgParseError(f"Unknown argument '{arg}'")
         name = _arg = None
 
         req = [a for a in self.pos_args.values() if not a.parsed and a.required]
@@ -452,11 +452,11 @@ class ArgMan:
                 self.pos_args[name].parsed = True
                 break
             else:
-                raise ArgParseError(f"Unknown argument `{arg}`")
+                raise ArgParseError(f"Unknown argument '{arg}'")
         try:
             value = _arg.type(arg)
         except ValueError:
-            raise ArgParseError(f"Type mismatch for `{_arg.name}` (expected {_arg.type.__name__})")
+            raise ArgParseError(f"Type mismatch for '{_arg.name}' (expected {_arg.type.__name__})")
         setattr(self.result, name, value)
 
     def parse(self):
@@ -540,7 +540,7 @@ class ArgMan:
                 except ArgParseError as e:
                     self._print_err(str(e))
 
-            raise AssertionError(f"Unreachable `{arg}`")
+            raise AssertionError(f"Unreachable '{arg}'")
         missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required and not a.default]
         if len(missing) > 0:
             message = "Missing required arguments:\n"
