@@ -326,6 +326,9 @@ class ArgMan:
     # TODO: make this function work without length check, to make it smaller
     # TODO: better handling jumps and issues
     def _parse_short_arg(self, short_arg: str, next_arg: str = None):
+        if '=' in short_arg:
+            raise ArgParseError(
+                f"Short option '{short_arg.split('=')[0]}' does not support '=' syntax. Use space-separated values")
         jump = 0
         name = short_arg.removeprefix('-')
         if len(name) > 1:
@@ -485,15 +488,22 @@ class ArgMan:
         while i < len(self.argv):
             arg = self.argv[i]
             if arg.startswith('--'):
-                next_arg = None
-                if i + 1 < len(self.argv):
-                    next_arg = self.argv[i + 1]
-                try:
-                    jump = self._parse_long_arg(arg, next_arg)
-                    i += jump
-                    continue
-                except ArgParseError as e:
-                    self._print_err(str(e))
+                if '=' in arg:
+                    arg, next_arg = arg.split('=', 1)
+                    try:
+                        self._parse_long_arg(arg, next_arg)
+                        i += 1
+                        continue
+                    except ArgParseError as e:
+                        self._print_err(str(e))
+                else:
+                    next_arg = self.argv[i + 1] if i + 1 < len(self.argv) else None
+                    try:
+                        jump = self._parse_long_arg(arg, next_arg)
+                        i += jump
+                        continue
+                    except ArgParseError as e:
+                        self._print_err(str(e))
             elif arg.startswith('-'):
                 next_arg = None
                 if i + 1 < len(self.argv):
