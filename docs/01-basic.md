@@ -14,24 +14,6 @@ from argman import ArgMan
 am = ArgMan()
 ```
 
-### Don’t exit on errors
-
-```python
-from argman import ArgMan
-
-am = ArgMan(exit_on_err=False)
-# Errors raise ArgParseError instead of printing help and exiting.
-```
-
-### Custom program name
-
-```python
-from argman import ArgMan
-
-am = ArgMan(prog='mytool')
-# Used in help output. Default: sys.argv[0]
-```
-
 ---
 
 ## Second step(define arguments)
