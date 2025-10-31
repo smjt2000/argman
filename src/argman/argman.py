@@ -57,28 +57,55 @@ class ArgParseError(Exception):
         super().__init__(message)
 
 
+_DEFAULT_ERRORS = {
+    'no_short_or_long': "At least one of 'short' or 'long' must be provided",
+    'short_not_one_char': "Short name must be a single character",
+    'long_less_than_two_chars': "Long name must be at least 2 characters",
+    'positional_default_type_mismatch': "Type of default value should be the same as defined type",
+    'required_after_optional': "Required positional argument cannot be defined after an optional one. All required arguments must come first.",
+    'optional_default_type_mismatch': "default must be a {type_name}",
+    'short_with_equal_sign': "Short option '{option}' does not support '=' syntax. Use space-separated values.",
+    'unknown_short_in_cluster': "Unknown argument '-{arg_name}' in '-{cluster}'",
+    'short_cluster_no_bool': "Option '-{arg_name}' requires an argument and cannot be clustered with other short options.",
+    'unknown_single_short': "Unknown argument '-{arg_name}'",
+    'missing_value_short': "Missing value for argument '-{arg_name}'",
+    'value_type_mismatch': "Value should be a {type_name} for argument '-{arg_name}'.",
+    'list_item_type_mismatch': "Value '{value}' should be of type {type_name}",
+    'unknown_long': "Unknown argument '--{arg_name}'",
+    'missing_value_long': "Missing value for argument '--{arg_name}'",
+    'unknown_positional': "Unknown argument '{arg_name}'",
+    'positional_type_mismatch': "Type mismatch for '{arg_name}' (expected {type_name})",
+    'parse_unreachable': "Unreachable '{arg_name}'",
+    'missing_positional_header': "Missing required arguments:",
+    'missing_positional_item': "    {arg_name}",
+}
+
+
 class ArgMan:
-    def __init__(self, prog=None, exit_on_err=True):
+    def __init__(self, prog=None, exit_on_err=True, custom_errors=None):
         self.program = prog or sys.argv[0]
         self.exit_on_err = exit_on_err
         self.argv = sys.argv[1:]
         self.argc = len(self.argv)
         self.pos_only = False
+        self.error_messages = _DEFAULT_ERRORS
         self.args: dict[str, _Arg] = {}
         self.pos_args: OrderedDict[str, _PosArg] = OrderedDict()
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
+        if custom_errors:
+            self.error_messages.update(custom_errors)
 
     def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None, item_type=None):
         """
         Internal helper for registering an argument.
         """
         if short is None and long is None:
-            raise ValueError("At least one of 'short' or 'long' must be provided")
+            raise ValueError(self.error_messages['no_short_or_long'])
         if short is not None and (not isinstance(short, str) or len(short) != 1):
-            raise ValueError("Short name must be a single character")
+            raise ValueError(self.error_messages['short_not_one_char'])
         if long is not None and (not isinstance(long, str) or len(long) < 2):
-            raise ValueError("Long name must be at least 2 characters")
+            raise ValueError(self.error_messages['long_less_than_two_chars'])
         _long = long
         if _long is not None:
             _long = _long.replace('-', '_')
@@ -184,12 +211,11 @@ class ArgMan:
             >>> print(args.input_path)
         """
         if default is not None and not isinstance(default, _type):
-            raise ValueError("Type of default value should be the same as defined type")
+            raise ValueError(self.error_messages['positional_default_type_mismatch'])
         if required is True:
             no_req = [name for name, arg in self.pos_args.items() if not arg.required]
             if no_req:
-                raise ValueError(
-                    "Required positional argument cannot be defined after an optional one. All required arguments must come first.")
+                raise ValueError(self.error_messages['required_after_optional'])
         arg = _PosArg(
             name=name, type=_type,
             default=default, desc=desc,
@@ -220,7 +246,8 @@ class ArgMan:
             3
         """
         if default is not None and not isinstance(default, int):
-            raise TypeError("default must be an int")
+            msg = self.error_messages['optional_default_type_mismatch'].format(type_name='int')
+            raise TypeError(msg)
         self.__set_arg(int, short, long, default, desc)
         return None
 
@@ -245,7 +272,8 @@ class ArgMan:
             1.0
         """
         if default is not None and not isinstance(default, (float, int)):
-            raise TypeError("default must be a number")
+            msg = self.error_messages['optional_default_type_mismatch'].format(type_name='number')
+            raise TypeError(msg)
         self.__set_arg(float, short, long, float(default), desc)
         return None
 
@@ -270,7 +298,8 @@ class ArgMan:
             'John Doe'
         """
         if default is not None and not isinstance(default, str):
-            raise TypeError("default must be a str")
+            msg = self.error_messages['optional_default_type_mismatch'].format(type_name='str')
+            raise TypeError(msg)
         self.__set_arg(str, short, long, default, desc)
         return None
 
@@ -306,7 +335,8 @@ class ArgMan:
             >>> print(args.verbose)  # True by default, False if --no-verbose is passed
         """
         if not isinstance(default, bool):
-            raise TypeError("default must be a bool")
+            msg = self.error_messages['optional_default_type_mismatch'].format(type_name='bool')
+            raise TypeError(msg)
         self.__set_arg(bool, short, long, default, desc)
         if default is True and long is not None:
             no_long = f"no-{long}"
@@ -340,7 +370,8 @@ class ArgMan:
             default = list()
         else:
             if not isinstance(default, list):
-                raise TypeError("default must be a list")
+                msg = self.error_messages['optional_default_type_mismatch'].format(type_name='list')
+                raise TypeError(msg)
         self.__set_arg(list, short, long, default, desc, item_type)
         return None
 
@@ -348,8 +379,8 @@ class ArgMan:
     # TODO: better handling jumps and issues
     def _parse_short_arg(self, short_arg: str, next_arg: str = None):
         if '=' in short_arg:
-            raise ArgParseError(
-                f"Short option '{short_arg.split('=')[0]}' does not support '=' syntax. Use space-separated values")
+            msg = self.error_messages['short_with_equal_sign'].format(option=short_arg.split('=')[0])
+            raise ArgParseError(msg)
         jump = 0
         name = short_arg.removeprefix('-')
         if len(name) > 1:
@@ -359,14 +390,15 @@ class ArgMan:
                 arg_name = name[i]
                 alias = self.aliases.get(arg_name)
                 if alias is None:
-                    raise ArgParseError(f"Unknown argument '-{arg_name}' in '-{name}'")
+                    msg = self.error_messages['unknown_short_in_cluster'].format(arg_name=arg_name, cluster=name)
+                    raise ArgParseError(msg)
                 arg = self.args.get(alias)
                 if arg.type is bool:
                     arg_value = True
                     i += 1
                 else:
-                    raise ArgParseError(
-                        f"Option '-{arg_name}' requires an argument and cannot be clustered with other short options.")
+                    msg = self.error_messages['short_cluster_no_bool'].format(arg_name=arg_name)
+                    raise ArgParseError(msg)
 
                 setattr(self.result, arg.short, arg_value)
                 if arg.long is not None:
@@ -374,7 +406,8 @@ class ArgMan:
         else:
             arg_name = self.aliases.get(name)
             if arg_name is None:
-                raise ArgParseError(f"Unknown argument '-{name}'")
+                msg = self.error_messages['unknown_single_short'].format(arg_name=name)
+                raise ArgParseError(msg)
             arg = self.args.get(arg_name)
             if arg.type is bool:
                 arg_value = True
@@ -385,21 +418,27 @@ class ArgMan:
                 return jump
             else:
                 if next_arg is None:
-                    raise ArgParseError(f"Missing value for argument '-{name}'")
+                    msg = self.error_messages['missing_value_short'].format(arg_name=name)
+                    raise ArgParseError(msg)
                 arg_value = next_arg
                 jump = 2
             if arg.type is not list:
                 try:
                     arg_value = arg.type(next_arg)
                 except ValueError:
-                    raise ArgParseError(
-                        f"Value should be a {arg.type.__name__}. argument '{arg.long or arg.short}'")
+                    msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__,
+                                                                            arg_name=name)
+                    raise ArgParseError(msg)
             else:
                 values = getattr(self.result, arg_name, [])
                 try:
                     casted_value = arg.item_type(arg_value)
                 except ValueError:
-                    raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
+                    msg = self.error_messages['list_item_type_mismatch'].format(
+                        value=arg_value,
+                        type_name=arg.item_type.__name__
+                    )
+                    raise ArgParseError(msg)
                 values.append(casted_value)
                 arg_value = values
             setattr(self.result, arg.short, arg_value)
@@ -412,7 +451,8 @@ class ArgMan:
         name = long_arg.removeprefix('--')
         arg_name = self.aliases.get(name)
         if arg_name is None:
-            raise ArgParseError(f"Unknown argument '--{name}'")
+            msg = self.error_messages['unknown_long'].format(arg_name=name)
+            raise ArgParseError(msg)
         arg = self.args.get(arg_name)
         if arg.type is bool:
             if long_arg.startswith('--no-'):
@@ -424,7 +464,8 @@ class ArgMan:
                 setattr(self.result, arg.short, arg_value)
             return jump
         if next_arg is None:
-            raise ArgParseError(f"Missing value for argument '--{name}'")
+            msg = self.error_messages['missing_value_long'].format(arg_name=name)
+            raise ArgParseError(msg)
         arg_value = next_arg
         jump = 2
         if arg.type is not list:
@@ -434,15 +475,18 @@ class ArgMan:
                 if arg.short:
                     setattr(self.result, arg.short, arg_value)
             except ValueError:
-                raise ArgParseError(
-                    f"Value should be a {arg.type.__name__}. argument '{arg.long}'"
-                )
+                msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__, arg_name=name)
+                raise ArgParseError(msg)
         else:
             values = getattr(self.result, arg_name, [])
             try:
                 casted_value = arg.item_type(arg_value)
             except ValueError:
-                raise ArgParseError(f"Value '{arg_value}' should be of type {arg.item_type.__name__}")
+                msg = self.error_messages['list_item_type_mismatch'].format(
+                    value=arg_value,
+                    type_name=arg.item_type.__name__
+                )
+                raise ArgParseError(msg)
             values.append(casted_value)
             setattr(self.result, arg.long, values)
             if arg.short:
@@ -451,7 +495,8 @@ class ArgMan:
 
     def _parse_pos_arg(self, arg):
         if len(self.pos_args) < 1:
-            raise ArgParseError(f"Unknown argument '{arg}'")
+            msg = self.error_messages['unknown_positional'].format(arg_name=arg)
+            raise ArgParseError(msg)
         name = _arg = None
 
         req = [a for a in self.pos_args.values() if not a.parsed and a.required]
@@ -468,11 +513,16 @@ class ArgMan:
                 self.pos_args[name].parsed = True
                 break
             else:
-                raise ArgParseError(f"Unknown argument '{arg}'")
+                msg = self.error_messages['unknown_positional'].format(arg_name=arg)
+                raise ArgParseError(msg)
         try:
             value = _arg.type(arg)
         except ValueError:
-            raise ArgParseError(f"Type mismatch for '{_arg.name}' (expected {_arg.type.__name__})")
+            msg = self.error_messages['positional_type_mismatch'].format(
+                arg_name=_arg.name,
+                type_name=_arg.type.__name__
+            )
+            raise ArgParseError(msg)
         setattr(self.result, name, value)
 
     def parse(self):
@@ -556,10 +606,13 @@ class ArgMan:
                 except ArgParseError as e:
                     self._print_err(str(e))
 
-            raise AssertionError(f"Unreachable '{arg}'")
+            msg = self.error_messages['parse_unreachable'].format(arg_name=arg)
+            raise AssertionError(msg)
         missing = [n for n, a in self.pos_args.items() if not a.parsed and a.required and not a.default]
         if len(missing) > 0:
-            message = "Missing required arguments:\n"
-            message += '\n'.join([f"    {name}" for name in missing])
+            header = self.error_messages['missing_positional_header']
+            msg = self.error_messages['missing_positional_item']
+            message = header
+            message += '\n'.join([msg.format(arg_name=name) for name in missing])
             self._print_err(message)
         return self.result
