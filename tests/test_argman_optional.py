@@ -228,6 +228,17 @@ class TestArgMan(unittest.TestCase):
         self.assertIn("-x", capture_err.getvalue())
         self.assertIn("-vxq", capture_err.getvalue())
 
+    def test_custome_error(self):
+        msg = 'you should provide a name!'
+        custom_error = {
+            'no_short_or_long': msg
+        }
+        sys.argv = ['prog']
+        parser = ArgMan(custom_errors=custom_error)
+        with self.assertRaises(ValueError) as cm:
+            parser.arg_bool(default=False)
+        self.assertIn(msg, str(cm.exception))
+
 
 if __name__ == '__main__':
     unittest.main()
