@@ -10,7 +10,7 @@ Default: `sys.argv[0]`
 
 Example:
 
-```
+```python
 am = ArgMan(prog='mytool')
 
 ```
@@ -23,7 +23,7 @@ If `False`: raise `ArgParseError` instead (useful for testing or embedding).
 
 Example:
 
-```
+```python
 am = ArgMan(exit_on_err=False)
 try:
     args = am.parse()
@@ -39,7 +39,7 @@ Each message can contain named placeholders like `{arg_name}`, `{type_name}`, et
 
 Example:
 
-```
+```python
 custom = {
     'unknown_long': "I don't know '--{arg_name}'. Try --help!",
     'missing_value_long': "Oops! '--{arg_name}' needs a value."
@@ -78,7 +78,7 @@ Placeholders used in each message are documented in the source. Unused placehold
 
 All options are optional. You can use any combination:
 
-```
+```python
 am = ArgMan(
     prog='myapp',
     exit_on_err=False,
