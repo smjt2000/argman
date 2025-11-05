@@ -15,6 +15,8 @@ A lightweight, zero-dependency argument parser for Python CLI tools — simple, 
 - Automatic `--no-flag` for booleans
 - `--arg=value` and `--` terminator support
 - Clean help and error messages
+- Config file support (JSON) via `load_config()`
+- Export parsed args via `dump_args()`
 
 ---
 
@@ -47,7 +49,9 @@ v0.1 — Core Functionality
 v0.2 — Extended Features
 
 - [x] arg_list, --no-flag, --arg=value, -- support
-- [ ] Custom error messages, config files, subcommands
+- [x] Custom error messages
+- [x] config files(`load_config`, `dump_args`)
+- [ ] subcommands
 
 v0.3 — Docs & Publish
 
