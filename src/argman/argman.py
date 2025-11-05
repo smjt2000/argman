@@ -10,6 +10,7 @@ class _Arg:
     type: type = None
     item_type: type = str
     default: int | float | str | list = None
+    parsed: bool = False
     desc: str = None
 
 
@@ -415,6 +416,7 @@ class ArgMan:
                 setattr(self.result, arg.short, arg_value)
                 if arg.long:
                     setattr(self.result, arg.long, arg_value)
+                arg.parsed = True
                 return jump
             else:
                 if next_arg is None:
@@ -444,6 +446,7 @@ class ArgMan:
             setattr(self.result, arg.short, arg_value)
             if arg.long is not None:
                 setattr(self.result, arg.long, arg_value)
+            arg.parsed = True
         return jump
 
     def _parse_long_arg(self, long_arg: str, next_arg: str = None):
@@ -462,6 +465,7 @@ class ArgMan:
             setattr(self.result, arg.long, arg_value)
             if arg.short:
                 setattr(self.result, arg.short, arg_value)
+            arg.parsed = True
             return jump
         if next_arg is None:
             msg = self.error_messages['missing_value_long'].format(arg_name=name)
@@ -474,6 +478,7 @@ class ArgMan:
                 setattr(self.result, arg.long, arg_value)
                 if arg.short:
                     setattr(self.result, arg.short, arg_value)
+                arg.parsed = True
             except ValueError:
                 msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__, arg_name=name)
                 raise ArgParseError(msg)
@@ -491,6 +496,7 @@ class ArgMan:
             setattr(self.result, arg.long, values)
             if arg.short:
                 setattr(self.result, arg.short, values)
+            arg.parsed = True
         return jump
 
     def _parse_pos_arg(self, arg):
