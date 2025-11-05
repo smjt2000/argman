@@ -220,6 +220,20 @@ class ArgMan:
         except ArgParseError as e:
             raise ArgParseError(str(e))
 
+    def dump_args(self, file_path: str = None):
+        try:
+            args = {name: value for name, value in self.result}
+            data = json.dumps(args, indent=2)
+            if file_path is not None:
+                with open(file_path, 'w') as f:
+                    f.write(data)
+            else:
+                print(data)
+        except (TypeError, ValueError) as e:
+            raise ArgParseError(f"Cannot serialize arguments to JSON: {e}") from e
+        except OSError as e:
+            raise ArgParseError(f"Failed to write config file '{file_path}': {e}") from e
+
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
         """
         Define a positional argument.
