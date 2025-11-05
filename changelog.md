@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.2 (2025-11-06)
+
+- ### Added
+
+    - Support for config files via `load_config(file_path)` method (JSON format).
+
+    - `dump_args(file_path=None)` method to serialize parsed arguments to JSON (print to stdout or save to file).
+
+    - Internal parsed tracking for arguments to enable safe config/CLI precedence handling.
+
 ## v0.2.1 (2025-10-31)
 
 - ### Added
