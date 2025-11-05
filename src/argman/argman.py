@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 import sys
+import json
 
 
 @dataclass
@@ -79,6 +80,7 @@ _DEFAULT_ERRORS = {
     'parse_unreachable': "Unreachable '{arg_name}'",
     'missing_positional_header': "Missing required arguments:",
     'missing_positional_item': "    {arg_name}",
+    'unknown_in_config': "Unknown argument '{arg_name}' in file '{file}'"
 }
 
 
@@ -189,6 +191,34 @@ class ArgMan:
             self._print_help()
             exit(1)
         raise ArgParseError(message)
+
+    def load_config(self, file_path: str):
+        try:
+            with open(file_path) as f:
+                args = json.load(f)
+            for name in args:
+                value = args[name]
+                arg_name = self.aliases.get(name)
+                if arg_name is None:
+                    msg = self.error_messages['unknown_in_config']
+                    msg = msg.format(arg_name=name, file=file_path)
+                    raise ArgParseError(msg)
+                arg = self.args.get(arg_name)
+                if arg.parsed:
+                    continue
+                if not isinstance(value, arg.type):
+                    try:
+                        value = arg.type(value)
+                    except ValueError:
+                        msg = self.error_messages['value_type_mismatch']
+                        msg = msg.format(type_name=arg.type.__name__, arg_name=name)
+                        raise ArgParseError(msg)
+                if arg.short:
+                    setattr(self.result, arg.short, value)
+                if arg.long:
+                    setattr(self.result, arg.long, value)
+        except ArgParseError as e:
+            raise ArgParseError(str(e))
 
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
         """
@@ -433,6 +463,8 @@ class ArgMan:
                     raise ArgParseError(msg)
             else:
                 values = getattr(self.result, arg_name, [])
+                if not arg.parsed:
+                    values = arg.default
                 try:
                     casted_value = arg.item_type(arg_value)
                 except ValueError:
@@ -484,6 +516,8 @@ class ArgMan:
                 raise ArgParseError(msg)
         else:
             values = getattr(self.result, arg_name, [])
+            if not arg.parsed:
+                values = arg.default
             try:
                 casted_value = arg.item_type(arg_value)
             except ValueError:
