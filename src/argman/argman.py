@@ -649,7 +649,9 @@ class Base:
 
 
 class _Cmd(Base):
-    pass
+    def __init__(self, prog=None, desc=None, exit_on_err=True, custom_errors=None):
+        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors)
+        self.desc: str = desc
 
 
 class ArgMan(Base):
@@ -658,9 +660,9 @@ class ArgMan(Base):
         self.commands: dict[str, _Cmd] = {}
         self.result.sub_cmd = None
 
-    def add_cmd(self, name: str) -> _Cmd:
+    def add_cmd(self, name: str, desc: str = None) -> _Cmd:
         prog = f"{self.program} {name}"
-        cmd = _Cmd(prog=prog)
+        cmd = _Cmd(prog=prog, desc=desc)
         self.commands[name] = cmd
         return cmd
 
@@ -672,7 +674,7 @@ class ArgMan(Base):
         if len(self.commands) > 0:
             print("\nCommands:")
             for name, cmd in self.commands.items():
-                print(f"  {name:<22}")
+                print(f"  {name:<22} : {cmd.desc.capitalize() if cmd.desc else 'No description'}")
 
     def parse(self) -> _ArgResult:
         """
