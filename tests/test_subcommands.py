@@ -75,6 +75,32 @@ class TestArgManSubcommands(unittest.TestCase):
         error_output = capture_err.getvalue()
         self.assertIn("Unknown argument 'unknown_cmd'", error_output)
 
+    def test_subcommand_optional_args_provided(self):
+        """Test subcommand with optional arguments (defined by defaults) when provided."""
+        sys.argv = ['myapp', 'config', '--mode', 'prod', '--timeout', '60', '--debug']
+        am = ArgMan()
+        cmd = am.add_cmd('config')
+        cmd.arg_str(long='mode', default='dev')
+        cmd.arg_int(long='timeout', default=30)
+        cmd.arg_bool(long='debug', default=False)
+
+        args = am.parse()
+
+        self.assertEqual(args.sub_cmd, 'config')
+        self.assertTrue(hasattr(args, 'config'))
+        self.assertEqual(args.config.mode, 'prod')
+        self.assertEqual(args.config.timeout, 60)
+        self.assertTrue(args.config.debug)
+
+    def test_subcommand_optional_args_not_provided(self):
+        """Test subcommand with optional arguments (defined by defaults) when not provided (defaults used)."""
+        sys.argv = ['myapp', 'config']
+        am = ArgMan()
+        cmd = am.add_cmd('config')
+        cmd.arg_str(long='mode', default='dev')
+        cmd.arg_int(long='timeout', default=30)
+        cmd.arg_bool(long='debug', default=False)
+
 
 if __name__ == '__main__':
     unittest.main()
