@@ -188,3 +188,49 @@ data.txt  # args.input
 ```
 
 > Required positional args must be defined before optional ones.
+
+---
+
+#### `add_cmd(name: str)`
+
+```python
+am = ArgMan()
+
+process_cmd = am.add_cmd('process')
+process_cmd.arg_str(long='input', default='input.txt')
+process_cmd.arg_int(long='threads', default=1)
+
+build_cmd = am.add_cmd('build')
+build_cmd.arg_bool(long='release', default=False)
+
+args = am.parse()
+
+if args.sub_cmd == 'process':
+    print(f"Processing {args.process.input} with {args.process.threads} threads")
+elif args.sub_cmd == 'build':
+    print(f"Building in {'release' if args.build.release else 'debug'} mode")
+```
+
+Run #1:
+
+```shell
+python app.py process --input my_data.txt --threads 4
+```
+
+Output #1:
+
+```
+Processing my_data.txt with 4 threads
+```
+
+Run #2:
+
+```shell
+python app.py build --release
+```
+
+Output #2:
+
+```
+Building in release mode
+```
