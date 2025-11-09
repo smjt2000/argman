@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0 (2025-11-09)
+
+- ### Added
+    - Support for subcommands via `add_cmd(name, desc)` method.
+
+    - Ability to define custom argument lists using `argv` parameter in `ArgMan`.
+
+    - `load_config(file_path)` method for loading arguments from a JSON file.
+
+    - `dump_args(file_path=None)` method for exporting current argument state to JSON.
+
+    - Custom error message system via `custom_errors` dictionary.
+
 ## v0.2.2 (2025-11-06)
 
 - ### Added
