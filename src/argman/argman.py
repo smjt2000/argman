@@ -99,7 +99,8 @@ class Base:
         if custom_errors:
             self.error_messages.update(custom_errors)
 
-    def __set_arg(self, _type: type, short: str = None, long: str = None, default=None, desc=None, item_type=None):
+    def __set_arg(self, _type: type, short: str = None, long: str = None,
+                  default=None, desc=None, item_type=None) -> None:
         """
         Internal helper for registering an argument.
         """
@@ -125,7 +126,7 @@ class Base:
             self.aliases[short] = main_name
         return None
 
-    def _print_help(self):
+    def _print_help(self) -> None:
         NAME_MAX_LEN = 22
 
         def get_arg_name(arg):
@@ -185,14 +186,14 @@ class Base:
                     text += f' (optional)'
                 print(text)
 
-    def _print_err(self, message: str):
+    def _print_err(self, message: str) -> None:
         if self.exit_on_err:
             print(message, file=sys.stderr)
             self._print_help()
             exit(1)
         raise ArgParseError(message)
 
-    def load_config(self, file_path: str):
+    def load_config(self, file_path: str) -> None:
         try:
             with open(file_path) as f:
                 args = json.load(f)
@@ -220,7 +221,7 @@ class Base:
         except ArgParseError as e:
             raise ArgParseError(str(e))
 
-    def dump_args(self, file_path: str = None):
+    def dump_args(self, file_path: str = None) -> None:
         try:
             args = {name: value for name, value in self.result}
             data = json.dumps(args, indent=2)
@@ -234,7 +235,7 @@ class Base:
         except OSError as e:
             raise ArgParseError(f"Failed to write config file '{file_path}': {e}") from e
 
-    def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None):
+    def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None) -> None:
         """
         Define a positional argument.
 
@@ -270,7 +271,7 @@ class Base:
         setattr(self.result, name, default)
         return None
 
-    def arg_int(self, *, short: str = None, long: str = None, default=None, desc=None):
+    def arg_int(self, *, short: str = None, long: str = None, default=None, desc=None) -> None:
         """
         Defines an optional integer argument.
 
@@ -296,7 +297,7 @@ class Base:
         self.__set_arg(int, short, long, default, desc)
         return None
 
-    def arg_float(self, *, short: str = None, long: str = None, default=None, desc=None):
+    def arg_float(self, *, short: str = None, long: str = None, default=None, desc=None) -> None:
         """
         Defines an optional float argument.
 
@@ -322,7 +323,7 @@ class Base:
         self.__set_arg(float, short, long, float(default), desc)
         return None
 
-    def arg_str(self, *, short: str = None, long: str = None, default=None, desc=None):
+    def arg_str(self, *, short: str = None, long: str = None, default=None, desc=None) -> None:
         """
         Defines an optional string argument.
 
@@ -348,7 +349,7 @@ class Base:
         self.__set_arg(str, short, long, default, desc)
         return None
 
-    def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None):
+    def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None) -> None:
         """
         Defines an optional boolean argument.
 
@@ -388,7 +389,8 @@ class Base:
             self.aliases[no_long] = long
         return None
 
-    def arg_list(self, *, short: str = None, long: str = None, default=None, item_type: type = str, desc=None):
+    def arg_list(self, *, short: str = None, long: str = None,
+                 default=None, item_type: type = str, desc=None) -> None:
         """
         Defines an optional list argument.
 
@@ -422,7 +424,7 @@ class Base:
 
     # TODO: make this function work without length check, to make it smaller
     # TODO: better handling jumps and issues
-    def _parse_short_arg(self, short_arg: str, next_arg: str = None):
+    def _parse_short_arg(self, short_arg: str, next_arg: str = None) -> int:
         if '=' in short_arg:
             msg = self.error_messages['short_with_equal_sign'].format(option=short_arg.split('=')[0])
             raise ArgParseError(msg)
@@ -495,7 +497,7 @@ class Base:
             arg.parsed = True
         return jump
 
-    def _parse_long_arg(self, long_arg: str, next_arg: str = None):
+    def _parse_long_arg(self, long_arg: str, next_arg: str = None) -> int:
         jump = 1
         name = long_arg.removeprefix('--')
         arg_name = self.aliases.get(name)
@@ -547,7 +549,7 @@ class Base:
             arg.parsed = True
         return jump
 
-    def _parse_pos_arg(self, arg):
+    def _parse_pos_arg(self, arg) -> None:
         if len(self.pos_args) < 1:
             msg = self.error_messages['unknown_positional'].format(arg_name=arg)
             raise ArgParseError(msg)
@@ -579,7 +581,7 @@ class Base:
             raise ArgParseError(msg)
         setattr(self.result, name, value)
 
-    def _parse(self):
+    def _parse(self) -> _ArgResult:
         i = 0
         while i < len(self.argv):
             arg = self.argv[i]
@@ -656,13 +658,13 @@ class ArgMan(Base):
         self.commands: dict[str, _Cmd] = {}
         self.result.sub_cmd = None
 
-    def add_cmd(self, name: str):
+    def add_cmd(self, name: str) -> _Cmd:
         prog = f"{self.program} {name}"
         cmd = _Cmd(prog=prog)
         self.commands[name] = cmd
         return cmd
 
-    def parse(self):
+    def parse(self) -> _ArgResult:
         """
         Parses the command-line arguments provided to the program.
 
