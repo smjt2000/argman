@@ -101,6 +101,84 @@ class TestArgManSubcommands(unittest.TestCase):
         cmd.arg_int(long='timeout', default=30)
         cmd.arg_bool(long='debug', default=False)
 
+    def test_subcommand_optional_list_args_provided(self):
+        """Test subcommand with optional list arguments when provided."""
+        sys.argv = ['myapp', 'build', '--flags', 'flag1', '--flags', 'flag2']
+        am = ArgMan()
+        cmd = am.add_cmd('build')
+        cmd.arg_list(long='flags', item_type=str, default=[])
+        args = am.parse()
+        self.assertEqual(args.sub_cmd, 'build')
+        self.assertTrue(hasattr(args, 'build'))
+        self.assertEqual(args.build.flags, ['flag1', 'flag2'])
+
+    def test_subcommand_optional_list_args_not_provided(self):
+        """Test subcommand with optional list arguments when not provided (defaults used)."""
+        sys.argv = ['myapp', 'build']
+        am = ArgMan()
+        cmd = am.add_cmd('build')
+        cmd.arg_list(long='flags', item_type=str, default=[])
+        args = am.parse()
+        self.assertEqual(args.sub_cmd, 'build')
+        self.assertTrue(hasattr(args, 'build'))
+        self.assertEqual(args.build.flags, [])
+
+    def test_subcommand_mixed_required_pos_and_optional_args(self):
+        """Test subcommand with required positional and optional (flag) arguments."""
+        sys.argv = ['myapp', 'run', 'my_script.py', '--count', '5', '--verbose']
+        am = ArgMan()
+        cmd = am.add_cmd('run')
+        cmd.arg_pos('script', _type=str, required=True)
+        cmd.arg_int(long='count', default=1)
+        cmd.arg_bool(long='verbose', default=False)
+        args = am.parse()
+        self.assertEqual(args.sub_cmd, 'run')
+        self.assertTrue(hasattr(args, 'run'))
+        self.assertEqual(args.run.script, 'my_script.py')
+        self.assertEqual(args.run.count, 5)
+        self.assertTrue(args.run.verbose)
+
+    def test_subcommand_optional_arg_after_required_pos(self):
+        """Test subcommand where optional arg comes after required positional."""
+        sys.argv = ['myapp', 'run', 'my_script.py', '--count', '5']
+        am = ArgMan()
+        cmd = am.add_cmd('run')
+        cmd.arg_pos('script', _type=str, required=True)  # Required positional
+        cmd.arg_int(long='count', default=1)
+        args = am.parse()
+        self.assertEqual(args.sub_cmd, 'run')
+        self.assertTrue(hasattr(args, 'run'))
+        self.assertEqual(args.run.script, 'my_script.py')
+        self.assertEqual(args.run.count, 5)
+
+    def test_subcommand_basic_parsing_corrected(self):
+        """Test basic subcommand parsing with arguments, focusing on defaults for optional."""
+        sys.argv = ['myapp', 'helper', '--num', '42']
+        am = ArgMan()
+        am.arg_bool(long='global_verbose', default=False)
+        helper_cmd = am.add_cmd('helper')
+        helper_cmd.arg_int(long='num', default=0)
+        args = am.parse()
+        self.assertEqual(args.sub_cmd, 'helper')
+        self.assertTrue(hasattr(args, 'helper'))
+        self.assertEqual(args.helper.num, 42)
+        self.assertFalse(args.global_verbose)
+
+    def test_subcommand_global_flag_before_name_fails(self):
+        """Test that global flags before subcommand name fails with current dispatch."""
+        sys.argv = ['myapp', '--global-verbose', 'helper', '--num', '42']
+        am = ArgMan()
+        am.arg_bool(long='global-verbose', default=False)
+        helper_cmd = am.add_cmd('helper')
+        helper_cmd.arg_int(long='num', default=0)
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stderr = sys.__stderr__
+        error_output = capture_err.getvalue()
+        self.assertIn("Unknown argument 'helper'", error_output)
+
 
 if __name__ == '__main__':
     unittest.main()
