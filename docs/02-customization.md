@@ -70,6 +70,7 @@ Available Error Keys:
 'parse_unreachable'
 'missing_positional_header'
 'missing_positional_item'
+'unknown_in_config'
 ```
 
 Placeholders used in each message are documented in the source. Unused placeholders are safely ignored.
