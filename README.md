@@ -52,7 +52,7 @@ v0.2 — Extended Features
 - [x] Custom error messages
 - [x] config files(`load_config`, `dump_args`)
 - [x] subcommands(one level, must be first argument)
-- [ ] custom `argv` support(e.g., `ArgMan(argv=['prog', '--num', '5'])`)
+- [x] custom `argv` support(e.g., `ArgMan(argv=['prog', '--num', '5'])`)
 
 v0.3 — Docs & Publish
 
