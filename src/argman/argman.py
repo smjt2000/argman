@@ -655,8 +655,12 @@ class _Cmd(Base):
 
 
 class ArgMan(Base):
-    def __init__(self, prog=None, exit_on_err=True, custom_errors=None):
+    def __init__(self, *, argv: list[str] = None, prog=None, exit_on_err=True, custom_errors=None):
         super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors)
+        if argv is not None:
+            self.program = prog or argv[0]
+            self.argv = argv[1:]
+            self.argc = len(self.argv)
         self.commands: dict[str, _Cmd] = {}
         self.result.sub_cmd = None
 
