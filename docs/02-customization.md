@@ -31,6 +31,20 @@ except ArgParseError as e:
     print("Custom error:", e)
 ```
 
+## `argv` (list[str], optional)
+
+If passed, use this list instead of `sys.argv`.
+
+The first item (`argv[0]`) is always treated as the program name.
+
+If the `prog` parameter is not explicitly set, `argv[0]` will be used as the program name.
+
+Example:
+
+```python
+am = ArgMan(argv=['my_app', '--num', '5'])
+```
+
 ## `custom_errors` (dict[str, str], optional)
 
 Override default error messages using semantic keys.
