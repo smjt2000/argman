@@ -84,7 +84,7 @@ _DEFAULT_ERRORS = {
 }
 
 
-class ArgMan:
+class Base:
     def __init__(self, prog=None, exit_on_err=True, custom_errors=None):
         self.program = prog or sys.argv[0]
         self.exit_on_err = exit_on_err
@@ -579,33 +579,7 @@ class ArgMan:
             raise ArgParseError(msg)
         setattr(self.result, name, value)
 
-    def parse(self):
-        """
-        Parses the command-line arguments provided to the program.
-
-        This method reads arguments from `sys.argv`, matches them against the
-        defined options (via `arg_int`, `arg_float`, `arg_str`, or `arg_bool`),
-        and returns an object containing the parsed results.
-        Each argument value is automatically converted to its defined type.
-
-        Returns:
-            _ArgResult: An object with attributes corresponding to defined arguments,
-            holding their parsed or default values.
-
-        Raises:
-            ValueError: If a non-boolean argument is missing a required value or if
-            a value cannot be converted to the expected type.
-
-        Example:
-            >>> # Example usage
-            >>> am = ArgMan()
-            >>> am.arg_int(short='n', long='num', default=10, desc='Number of items')
-            >>> am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose mode')
-            >>> args = am.parse()
-            >>> print(args.num, args.verbose)
-            10 False
-        """
-
+    def _parse(self):
         i = 0
         while i < len(self.argv):
             arg = self.argv[i]
@@ -670,3 +644,59 @@ class ArgMan:
             message += '\n'.join([msg.format(arg_name=name) for name in missing])
             self._print_err(message)
         return self.result
+
+
+class _Cmd(Base):
+    pass
+
+
+class ArgMan(Base):
+    def __init__(self, prog=None, exit_on_err=True, custom_errors=None):
+        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors)
+        self.commands: dict[str, _Cmd] = {}
+        self.result.sub_cmd = None
+
+    def add_cmd(self, name: str):
+        prog = f"{self.program} {name}"
+        cmd = _Cmd(prog=prog)
+        self.commands[name] = cmd
+        return cmd
+
+    def parse(self):
+        """
+        Parses the command-line arguments provided to the program.
+
+        This method reads arguments from `sys.argv`, matches them against the
+        defined options (via `arg_int`, `arg_float`, `arg_str`, or `arg_bool`),
+        and returns an object containing the parsed results.
+        Each argument value is automatically converted to its defined type.
+
+        Returns:
+            _ArgResult: An object with attributes corresponding to defined arguments,
+            holding their parsed or default values.
+
+        Raises:
+            ValueError: If a non-boolean argument is missing a required value or if
+            a value cannot be converted to the expected type.
+
+        Example:
+            >>> # Example usage
+            >>> am = ArgMan()
+            >>> am.arg_int(short='n', long='num', default=10, desc='Number of items')
+            >>> am.arg_bool(short='v', long='verbose', default=False, desc='Enable verbose mode')
+            >>> args = am.parse()
+            >>> print(args.num, args.verbose)
+        10 False
+        """
+        if len(self.argv) > 0:
+            arg = self.argv[0]
+            cmd = self.commands.get(arg)
+            if cmd is not None:
+                cmd_argv = self.argv[1:]
+                cmd.argv = cmd_argv
+                cmd.argc = len(cmd_argv)
+                result = cmd._parse()
+                setattr(self.result, arg, result)
+                setattr(self.result, 'sub_cmd', arg)
+                return self.result
+        return self._parse()
