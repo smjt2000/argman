@@ -126,7 +126,7 @@ class Base:
             self.aliases[short] = main_name
         return None
 
-    def _print_help(self) -> None:
+    def _print_help(self, header: str = None) -> None:
         NAME_MAX_LEN = 22
 
         def get_arg_name(arg):
@@ -145,7 +145,7 @@ class Base:
 
             return name
 
-        header = f"Usage: {self.program}"
+        header = (header or "Usage: {prog}").format(prog=self.program)
         opt_poses = []
         req_poses = []
         for arg in self.pos_args.values():
@@ -663,6 +663,16 @@ class ArgMan(Base):
         cmd = _Cmd(prog=prog)
         self.commands[name] = cmd
         return cmd
+
+    def _print_help(self, header: str = None) -> None:
+        header = "Usage: {prog}"
+        if len(self.commands) > 0:
+            header = "Usage: {prog} <command>"
+        super()._print_help(header)
+        if len(self.commands) > 0:
+            print("\nCommands:")
+            for name, cmd in self.commands.items():
+                print(f"  {name:<22}")
 
     def parse(self) -> _ArgResult:
         """
