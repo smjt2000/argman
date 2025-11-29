@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.1 (2025-11-29)
+
+- ### Added
+    - `choices` validation for all optional argument types (arg_int, arg_str, etc.) to restrict allowed values.
+- ### Changed
+    - CLI parsing now validates values against `choices` at runtime with clear error messages.
+
 ## v0.3.0 (2025-11-09)
 
 - ### Added
