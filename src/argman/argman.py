@@ -11,6 +11,7 @@ class _Arg:
     type: type = None
     item_type: type = str
     default: int | float | str | list = None
+    choices: list = None
     parsed: bool = False
     desc: str = None
 
@@ -80,7 +81,11 @@ _DEFAULT_ERRORS = {
     'parse_unreachable': "Unreachable '{arg_name}'",
     'missing_positional_header': "Missing required arguments:",
     'missing_positional_item': "    {arg_name}",
-    'unknown_in_config': "Unknown argument '{arg_name}' in file '{file}'"
+    'unknown_in_config': "Unknown argument '{arg_name}' in file '{file}'",
+    'choices_not_list_tuple': 'Choices must be list or tuple',
+    'choices_type_mismatch': "Items in choices must be the same type as argument",
+    'value_not_in_choices_short': "Value for '-{arg_name}' must be in '{arg_choices}'",
+    'value_not_in_choices_long': "Value for '--{arg_name}' must be in '{arg_choices}'",
 }
 
 
@@ -100,7 +105,7 @@ class Base:
             self.error_messages.update(custom_errors)
 
     def __set_arg(self, _type: type, short: str = None, long: str = None,
-                  default=None, desc=None, item_type=None) -> None:
+                  default=None, choices=None, desc=None, item_type=None) -> None:
         """
         Internal helper for registering an argument.
         """
@@ -110,13 +115,23 @@ class Base:
             raise ValueError(self.error_messages['short_not_one_char'])
         if long is not None and (not isinstance(long, str) or len(long) < 2):
             raise ValueError(self.error_messages['long_less_than_two_chars'])
+        if choices is not None:
+            if not isinstance(choices, (list, tuple)):
+                raise ValueError(self.error_messages['choices_not_list_tuple'])
+            for c in choices:
+                if _type is list:
+                    if not isinstance(c, item_type):
+                        raise ValueError(self.error_messages['choices_type_mismatch'])
+                elif not isinstance(c, _type):
+                    raise ValueError(self.error_messages['choices_type_mismatch'])
+
         _long = long
         if _long is not None:
             _long = _long.replace('-', '_')
         main_name = long or short
         arg = _Arg(
             short=short, long=_long, type=_type,
-            default=default, desc=desc, item_type=item_type
+            default=default, choices=choices, desc=desc, item_type=item_type
         )
         self.args[main_name] = arg
         setattr(self.result, main_name, default)
@@ -271,7 +286,7 @@ class Base:
         setattr(self.result, name, default)
         return None
 
-    def arg_int(self, *, short: str = None, long: str = None, default=None, desc=None) -> None:
+    def arg_int(self, *, short: str = None, long: str = None, default=None, choices=None, desc=None) -> None:
         """
         Defines an optional integer argument.
 
@@ -279,6 +294,7 @@ class Base:
             short (str, optional): Short name for the argument (e.g., `-n`).
             long (str, optional): Long name for the argument (e.g., `--number`).
             default (int, required): Default integer value for the argument.
+            choices (list, optional): List of available options for the argument.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -294,10 +310,10 @@ class Base:
         if default is not None and not isinstance(default, int):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='int')
             raise TypeError(msg)
-        self.__set_arg(int, short, long, default, desc)
+        self.__set_arg(int, short, long, default, choices, desc)
         return None
 
-    def arg_float(self, *, short: str = None, long: str = None, default=None, desc=None) -> None:
+    def arg_float(self, *, short: str = None, long: str = None, default=None, choices=None, desc=None) -> None:
         """
         Defines an optional float argument.
 
@@ -305,6 +321,7 @@ class Base:
             short (str, optional): Short name for the argument (e.g., `-r`).
             long (str, optional): Long name for the argument (e.g., `--rate`).
             default (float, required): Default float value for the argument.
+            choices (list, optional): List of available options for the argument.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -320,10 +337,10 @@ class Base:
         if default is not None and not isinstance(default, (float, int)):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='number')
             raise TypeError(msg)
-        self.__set_arg(float, short, long, float(default), desc)
+        self.__set_arg(float, short, long, float(default), choices, desc)
         return None
 
-    def arg_str(self, *, short: str = None, long: str = None, default=None, desc=None) -> None:
+    def arg_str(self, *, short: str = None, long: str = None, default=None, choices=None, desc=None) -> None:
         """
         Defines an optional string argument.
 
@@ -331,6 +348,7 @@ class Base:
             short (str, optional): Short name for the argument (e.g., `-a`).
             long (str, optional): Long name for the argument (e.g., `--author`).
             default (str, required): Default str value for the argument.
+            choices (list, optional): List of available options for the argument.
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -346,7 +364,7 @@ class Base:
         if default is not None and not isinstance(default, str):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='str')
             raise TypeError(msg)
-        self.__set_arg(str, short, long, default, desc)
+        self.__set_arg(str, short, long, default, choices, desc)
         return None
 
     def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None) -> None:
@@ -390,7 +408,7 @@ class Base:
         return None
 
     def arg_list(self, *, short: str = None, long: str = None,
-                 default=None, item_type: type = str, desc=None) -> None:
+                 default=None, choices=None, item_type: type = str, desc=None) -> None:
         """
         Defines an optional list argument.
 
@@ -398,6 +416,7 @@ class Base:
             short (str, optional): Short name for the argument (e.g., `-f`).
             long (str, optional): Long name for the argument (e.g., `--file`).
             default (list, optional): Default list value for the argument.
+            choices (list, optional): List of available options for the argument.
             desc (str, optional): Description for the argument, used in help messages.
             item_type (type, optional): Type to which each value should be converted (default: str).
 
@@ -419,7 +438,7 @@ class Base:
             if not isinstance(default, list):
                 msg = self.error_messages['optional_default_type_mismatch'].format(type_name='list')
                 raise TypeError(msg)
-        self.__set_arg(list, short, long, default, desc, item_type)
+        self.__set_arg(list, short, long, default, choices, desc, item_type)
         return None
 
     # TODO: make this function work without length check, to make it smaller
@@ -477,6 +496,12 @@ class Base:
                     msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__,
                                                                             arg_name=name)
                     raise ArgParseError(msg)
+                if arg.choices is not None:
+                    if arg_value not in arg.choices:
+                        msg = self.error_messages['value_not_in_choices_short'].format(
+                            arg_name=name, arg_choices=arg.choices
+                        )
+                        raise ArgParseError(msg)
             else:
                 values = getattr(self.result, arg_name, [])
                 if not arg.parsed:
@@ -489,6 +514,12 @@ class Base:
                         type_name=arg.item_type.__name__
                     )
                     raise ArgParseError(msg)
+                if arg.choices is not None:
+                    if casted_value not in arg.choices:
+                        msg = self.error_messages['value_not_in_choices_short'].format(
+                            arg_name=name, arg_choices=arg.choices
+                        )
+                        raise ArgParseError(msg)
                 values.append(casted_value)
                 arg_value = values
             setattr(self.result, arg.short, arg_value)
@@ -530,6 +561,12 @@ class Base:
             except ValueError:
                 msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__, arg_name=name)
                 raise ArgParseError(msg)
+            if arg.choices is not None:
+                if arg_value not in arg.choices:
+                    msg = self.error_messages['value_not_in_choices_long'].format(
+                        arg_name=name, arg_choices=arg.choices
+                    )
+                    raise ArgParseError(msg)
         else:
             values = getattr(self.result, arg_name, [])
             if not arg.parsed:
@@ -542,6 +579,12 @@ class Base:
                     type_name=arg.item_type.__name__
                 )
                 raise ArgParseError(msg)
+            if arg.choices is not None:
+                if casted_value not in arg.choices:
+                    msg = self.error_messages['value_not_in_choices_long'].format(
+                        arg_name=name, arg_choices=arg.choices
+                    )
+                    raise ArgParseError(msg)
             values.append(casted_value)
             setattr(self.result, arg.long, values)
             if arg.short:
