@@ -84,6 +84,7 @@ _DEFAULT_ERRORS = {
     'unknown_in_config': "Unknown argument '{arg_name}' in file '{file}'",
     'choices_not_list_tuple': 'Choices must be list or tuple',
     'choices_type_mismatch': "Items in choices must be the same type as argument",
+    'choices_default_type_mismatch': "Default value must be in choices",
     'value_not_in_choices_short': "Value for '-{arg_name}' must be in '{arg_choices}'",
     'value_not_in_choices_long': "Value for '--{arg_name}' must be in '{arg_choices}'",
 }
@@ -124,6 +125,8 @@ class Base:
                         raise ValueError(self.error_messages['choices_type_mismatch'])
                 elif not isinstance(c, _type):
                     raise ValueError(self.error_messages['choices_type_mismatch'])
+            if default and default not in choices:
+                raise ValueError(self.error_messages['choices_default_type_mismatch'])
 
         _long = long
         if _long is not None:
