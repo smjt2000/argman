@@ -239,6 +239,86 @@ class TestArgMan(unittest.TestCase):
             parser.arg_bool(default=False)
         self.assertIn(msg, str(cm.exception))
 
+    def test_choices_valid_value_int(self):
+        """Test arg_int with choices accepts a valid value."""
+        sys.argv = ['prog', '--num', '10']
+        am = ArgMan()
+        am.arg_int(long='num', choices=[5, 10, 15])
+        args = am.parse()
+        self.assertEqual(args.num, 10)
+
+    def test_choices_invalid_value_int(self):
+        """Test arg_int with choices rejects an invalid value."""
+        sys.argv = ['prog', '--num', '7']
+        am = ArgMan()
+        am.arg_int(long='num', choices=[5, 10, 15])
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Value for '--num' must be in", capture_err.getvalue())
+
+    def test_choices_valid_value_str(self):
+        """Test arg_str with choices accepts a valid value."""
+        sys.argv = ['prog', '--mode', 'prod']
+        am = ArgMan()
+        am.arg_str(long='mode', choices=['dev', 'test', 'prod'])
+        args = am.parse()
+        self.assertEqual(args.mode, 'prod')
+
+    def test_choices_invalid_value_str(self):
+        """Test arg_str with choices rejects an invalid value."""
+        sys.argv = ['prog', '--mode', 'stage']
+        am = ArgMan()
+        am.arg_str(long='mode', choices=['dev', 'test', 'prod'])
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Value for '--mode' must be in", capture_err.getvalue())
+
+    def test_choices_list_valid_item(self):
+        """Test arg_list with choices accepts valid items."""
+        sys.argv = ['prog', '--env', 'dev', '--env', 'test']
+        am = ArgMan()
+        am.arg_list(long='env', item_type=str, choices=['dev', 'test', 'prod'])
+        args = am.parse()
+        self.assertEqual(args.env, ['dev', 'test'])
+
+    def test_choices_list_invalid_item(self):
+        """Test arg_list with choices rejects an invalid item."""
+        sys.argv = ['prog', '--env', 'dev', '--env', 'stage']
+        am = ArgMan()
+        am.arg_list(long='env', item_type=str, choices=['dev', 'test', 'prod'])
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Value for '--env' must be in", capture_err.getvalue())
+
+    def test_choices_with_default_valid(self):
+        """Test that default value is checked against choices at definition time."""
+        am = ArgMan()
+        # This should work
+        am.arg_str(long='mode', default='dev', choices=['dev', 'prod'])
+
+    def test_choices_with_default_invalid(self):
+        """Test that invalid default raises ValueError at definition time."""
+        am = ArgMan()
+        with self.assertRaises(ValueError) as cm:
+            am.arg_str(long='mode', default='stage', choices=['dev', 'prod'])
+        self.assertIn("Default value must be in choices", str(cm.exception))
+
+    def test_choices_not_list_or_tuple(self):
+        """Test that non-list/tuple choices raise error at definition."""
+        am = ArgMan()
+        with self.assertRaises(ValueError) as cm:
+            am.arg_int(long='num', choices="5,10")
+        self.assertIn("Choices must be list or tuple", str(cm.exception))
+
 
 if __name__ == '__main__':
     unittest.main()
