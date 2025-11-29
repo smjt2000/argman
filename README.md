@@ -11,12 +11,13 @@ A lightweight, zero-dependency argument parser for Python CLI tools — simple, 
 - Type-safe parsing: `int`, `float`, `str`, `bool`, `list`
 - Default values and boolean toggles
 - Repeated arguments with `arg_list`
-- Positional arguments
 - Automatic `--no-flag` for booleans
+- Positional arguments
 - `--arg=value` and `--` terminator support
 - Clean help and error messages
 - Config file support (JSON) via `load_config()`
 - Export parsed args via `dump_args()`
+- Choices validation(`choices=[...]`)
 
 ---
 
@@ -61,10 +62,10 @@ v0.3 — Docs & Publish
 
 v0.4 — Validation & Customization
 
+- [x] Choices: Limit argument values to a predefined set of allowed options.
 - [ ] Validators: Define custom checks for argument values (e.g., range, format).
 - [ ] Formatters: Apply custom transformations to parsed argument values (e.g., `str.lower`).
 - [ ] Dependencies: Specify relationships between arguments (e.g., required, exclusive).
-- [ ] Choices: Limit argument values to a predefined set of allowed options.
 
 ## License
 

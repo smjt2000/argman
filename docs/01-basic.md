@@ -32,10 +32,10 @@ args = am.parse()
 
 # Argument types
 
-#### `arg_int(short=None, long=None, default=None, desc=None)`
+#### `arg_int(short=None, long=None, default=None, choices=None, desc=None)`
 
 ```python
-am.arg_int(short='n', long='num', default=5, desc='Number of items')
+am.arg_int(short='n', long='num', default=5, choices=[5, 10, 15], desc='Number of items')
 args = am.parse()
 print(args.num)
 print(args.n)
@@ -58,10 +58,10 @@ Output:
 
 ---
 
-#### `arg_float(short=None, long=None, default=None, desc=None)`
+#### `arg_float(short=None, long=None, default=None, choices=None, desc=None)`
 
 ```python
-am.arg_float(short='r', long='rate', default=1.0, desc='Interest rate')
+am.arg_float(short='r', long='rate', default=1.0, choices=[1.0, 2.0], desc='Interest rate')
 args = am.parse()
 print(args.rate)
 print(args.r)
@@ -82,10 +82,10 @@ Output:
 
 ---
 
-#### `arg_str(short=None, long=None, default=None, desc=None)`
+#### `arg_str(short=None, long=None, default=None, choices=None, desc=None)`
 
 ```python
-am.arg_str(short='a', long='author', default='anon', desc='Author name')
+am.arg_str(short='a', long='author', default='anon', choices=['mike', 'anon', 'dave'], desc='Author name')
 args = am.parse()
 print(args.author)
 print(args.a)
@@ -139,10 +139,10 @@ am.arg_bool(long='color', default=True)
 
 ---
 
-#### `arg_list(short=None, long=None, default=None, item_type=str, desc=None)`
+#### `arg_list(short=None, long=None, default=None, choices=None, item_type=str, desc=None)`
 
 ```python
-am.arg_list(short='f', long='files', default=[], desc='Input files')
+am.arg_list(short='f', long='files', default=[], choices=['a.txt', 'b.txt'], desc='Input files')
 am.arg_list(long='nums', item_type=int, desc='Numbers')
 args = am.parse()
 print(args.files)
