@@ -144,6 +144,16 @@ class Base:
             self.aliases[short] = main_name
         return None
 
+    def __set_value(self, arg: _Arg, value):
+        """
+        Internal helper for setting argument value.
+        """
+        if arg.short:
+            setattr(self.result, arg.short, value)
+        if arg.long:
+            setattr(self.result, arg.long, value)
+        arg.parsed = True
+
     def _print_help(self, header: str = None) -> None:
         NAME_MAX_LEN = 22
 
@@ -469,9 +479,7 @@ class Base:
                     msg = self.error_messages['short_cluster_no_bool'].format(arg_name=arg_name)
                     raise ArgParseError(msg)
 
-                setattr(self.result, arg.short, arg_value)
-                if arg.long is not None:
-                    setattr(self.result, arg.long, arg_value)
+                self.__set_value(arg, arg_value)
         else:
             arg_name = self.aliases.get(name)
             if arg_name is None:
@@ -481,10 +489,7 @@ class Base:
             if arg.type is bool:
                 arg_value = True
                 jump = 1
-                setattr(self.result, arg.short, arg_value)
-                if arg.long:
-                    setattr(self.result, arg.long, arg_value)
-                arg.parsed = True
+                self.__set_value(arg, arg_value)
                 return jump
             else:
                 if next_arg is None:
@@ -525,10 +530,7 @@ class Base:
                         raise ArgParseError(msg)
                 values.append(casted_value)
                 arg_value = values
-            setattr(self.result, arg.short, arg_value)
-            if arg.long is not None:
-                setattr(self.result, arg.long, arg_value)
-            arg.parsed = True
+            self.__set_value(arg, arg_value)
         return jump
 
     def _parse_long_arg(self, long_arg: str, next_arg: str = None) -> int:
@@ -544,10 +546,7 @@ class Base:
                 arg_value = False
             else:
                 arg_value = True
-            setattr(self.result, arg.long, arg_value)
-            if arg.short:
-                setattr(self.result, arg.short, arg_value)
-            arg.parsed = True
+            self.__set_value(arg, arg_value)
             return jump
         if next_arg is None:
             msg = self.error_messages['missing_value_long'].format(arg_name=name)
@@ -557,10 +556,7 @@ class Base:
         if arg.type is not list:
             try:
                 arg_value = arg.type(next_arg)
-                setattr(self.result, arg.long, arg_value)
-                if arg.short:
-                    setattr(self.result, arg.short, arg_value)
-                arg.parsed = True
+                self.__set_value(arg, arg_value)
             except ValueError:
                 msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__, arg_name=name)
                 raise ArgParseError(msg)
@@ -589,10 +585,7 @@ class Base:
                     )
                     raise ArgParseError(msg)
             values.append(casted_value)
-            setattr(self.result, arg.long, values)
-            if arg.short:
-                setattr(self.result, arg.short, values)
-            arg.parsed = True
+            self.__set_value(arg, values)
         return jump
 
     def _parse_pos_arg(self, arg) -> None:
