@@ -18,6 +18,7 @@ A lightweight, zero-dependency argument parser for Python CLI tools — simple, 
 - Config file support (JSON) via `load_config()`
 - Export parsed args via `dump_args()`
 - Choices validation(`choices=[...]`)
+- Custom validation(`validator=...`)
 
 ---
 
