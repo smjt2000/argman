@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from dataclasses import dataclass
+from typing import Callable
 import sys
 import json
 
@@ -12,6 +13,7 @@ class _Arg:
     item_type: type = str
     default: int | float | str | list = None
     choices: list = None
+    validator: Callable = None
     parsed: bool = False
     desc: str = None
 
@@ -20,9 +22,14 @@ class _Arg:
             return self.item_type(value)
         return self.type(value)
 
-    def validate(self, value):
-        if self.choices is not None and value not in self.choices:
-            return False
+    def validate_choices(self, value):
+        if self.choices is not None:
+            return value in self.choices
+        return True
+
+    def validate_custom(self, value):
+        if self.validator is not None:
+            return self.validator(value)
         return True
 
 
@@ -97,6 +104,12 @@ _DEFAULT_ERRORS = {
     'choices_default_type_mismatch': "Default value must be in choices",
     'value_not_in_choices_short': "Value for '-{arg_name}' must be in '{arg_choices}'",
     'value_not_in_choices_long': "Value for '--{arg_name}' must be in '{arg_choices}'",
+    'validator_is_not_callable': 'Validator should be a callable object',
+    'default_failed_validation': 'Default value must pass the validation',
+    'validation_failed_short': "Validation failed for '-{arg_name}' ({value})",
+    'validation_failed_long': "Validation failed for '--{arg_name}' ({value})",
+    'validation_failed_short_message': "Validation failed for '-{arg_name}' ({value}): {err}",
+    'validation_failed_long_message': "Validation failed for '--{arg_name}' ({value}): {err}",
 }
 
 
@@ -116,7 +129,7 @@ class Base:
             self.error_messages.update(custom_errors)
 
     def __set_arg(self, _type: type, short: str = None, long: str = None,
-                  default=None, choices=None, desc=None, item_type=None) -> None:
+                  default=None, choices=None, validator=None, desc=None, item_type=None) -> None:
         """
         Internal helper for registering an argument.
         """
@@ -137,14 +150,19 @@ class Base:
                     raise ValueError(self.error_messages['choices_type_mismatch'])
             if default and default not in choices:
                 raise ValueError(self.error_messages['choices_default_type_mismatch'])
+        if validator is not None:
+            if not callable(validator):
+                raise ValueError(self.error_messages['validator_is_not_callable'])
+            if default and not validator(default):
+                raise ValueError(self.error_messages['default_failed_validation'])
 
         _long = long
         if _long is not None:
             _long = _long.replace('-', '_')
         main_name = long or short
         arg = _Arg(
-            short=short, long=_long, type=_type,
-            default=default, choices=choices, desc=desc, item_type=item_type
+            short=short, long=_long, type=_type, default=default,
+            validator=validator, choices=choices, desc=desc, item_type=item_type
         )
         self.args[main_name] = arg
         setattr(self.result, main_name, default)
@@ -309,7 +327,8 @@ class Base:
         setattr(self.result, name, default)
         return None
 
-    def arg_int(self, *, short: str = None, long: str = None, default=None, choices=None, desc=None) -> None:
+    def arg_int(self, *, short: str = None, long: str = None,
+                default=None, choices=None, validator=None, desc=None) -> None:
         """
         Defines an optional integer argument.
 
@@ -318,6 +337,7 @@ class Base:
             long (str, optional): Long name for the argument (e.g., `--number`).
             default (int, required): Default integer value for the argument.
             choices (list, optional): List of available options for the argument.
+            validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -333,10 +353,11 @@ class Base:
         if default is not None and not isinstance(default, int):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='int')
             raise TypeError(msg)
-        self.__set_arg(int, short, long, default, choices, desc)
+        self.__set_arg(int, short, long, default, choices, validator, desc)
         return None
 
-    def arg_float(self, *, short: str = None, long: str = None, default=None, choices=None, desc=None) -> None:
+    def arg_float(self, *, short: str = None, long: str = None,
+                  default=None, choices=None, validator=None, desc=None) -> None:
         """
         Defines an optional float argument.
 
@@ -345,6 +366,7 @@ class Base:
             long (str, optional): Long name for the argument (e.g., `--rate`).
             default (float, required): Default float value for the argument.
             choices (list, optional): List of available options for the argument.
+            validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -360,10 +382,11 @@ class Base:
         if default is not None and not isinstance(default, (float, int)):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='number')
             raise TypeError(msg)
-        self.__set_arg(float, short, long, float(default), choices, desc)
+        self.__set_arg(float, short, long, float(default), choices, validator, desc)
         return None
 
-    def arg_str(self, *, short: str = None, long: str = None, default=None, choices=None, desc=None) -> None:
+    def arg_str(self, *, short: str = None, long: str = None,
+                default=None, choices=None, validator=None, desc=None) -> None:
         """
         Defines an optional string argument.
 
@@ -372,6 +395,7 @@ class Base:
             long (str, optional): Long name for the argument (e.g., `--author`).
             default (str, required): Default str value for the argument.
             choices (list, optional): List of available options for the argument.
+            validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
             desc (str, optional): Description for the argument, used in help messages.
 
         Raises:
@@ -387,7 +411,7 @@ class Base:
         if default is not None and not isinstance(default, str):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='str')
             raise TypeError(msg)
-        self.__set_arg(str, short, long, default, choices, desc)
+        self.__set_arg(str, short, long, default, choices, validator, desc)
         return None
 
     def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None) -> None:
@@ -430,8 +454,8 @@ class Base:
             self.aliases[no_long] = long
         return None
 
-    def arg_list(self, *, short: str = None, long: str = None,
-                 default=None, choices=None, item_type: type = str, desc=None) -> None:
+    def arg_list(self, *, short: str = None, long: str = None, default=None,
+                 choices=None, validator=None, item_type: type = str, desc=None) -> None:
         """
         Defines an optional list argument.
 
@@ -440,6 +464,7 @@ class Base:
             long (str, optional): Long name for the argument (e.g., `--file`).
             default (list, optional): Default list value for the argument.
             choices (list, optional): List of available options for the argument.
+            validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
             desc (str, optional): Description for the argument, used in help messages.
             item_type (type, optional): Type to which each value should be converted (default: str).
 
@@ -461,7 +486,7 @@ class Base:
             if not isinstance(default, list):
                 msg = self.error_messages['optional_default_type_mismatch'].format(type_name='list')
                 raise TypeError(msg)
-        self.__set_arg(list, short, long, default, choices, desc, item_type)
+        self.__set_arg(list, short, long, default, choices, validator, desc, item_type)
         return None
 
     # TODO: make this function work without length check, to make it smaller
@@ -517,9 +542,19 @@ class Base:
                     msg = self.error_messages['value_type_mismatch'].format(
                         type_name=arg.type.__name__, arg_name=name)
                 raise ArgParseError(msg)
-            if not arg.validate(arg_value):
+            if not arg.validate_choices(arg_value):
                 msg = self.error_messages['value_not_in_choices_short'].format(
                     arg_name=name, arg_choices=', '.join(map(str, arg.choices)))
+                raise ArgParseError(msg)
+            try:
+                is_valid = arg.validate_custom(arg_value)
+            except Exception as e:
+                msg = self.error_messages['validation_failed_short_message'].format(
+                    arg_name=name, value=arg_value, err=str(e))
+                raise ArgParseError(msg)
+            if not is_valid:
+                msg = self.error_messages['validation_failed_short'].format(
+                    arg_name=name, value=arg_value)
                 raise ArgParseError(msg)
 
             if arg.type is list:
@@ -561,9 +596,19 @@ class Base:
                     type_name=arg.type.__name__, arg_name=name
                 )
             raise ArgParseError(msg)
-        if not arg.validate(arg_value):
+        if not arg.validate_choices(arg_value):
             msg = self.error_messages['value_not_in_choices_long'].format(
                 arg_name=name, arg_choices=', '.join(map(str, arg.choices)))
+            raise ArgParseError(msg)
+        try:
+            is_valid = arg.validate_custom(arg_value)
+        except Exception as e:
+            msg = self.error_messages['validation_failed_long_message'].format(
+                arg_name=name, value=arg_value, err=str(e))
+            raise ArgParseError(msg)
+        if not is_valid:
+            msg = self.error_messages['validation_failed_long'].format(
+                arg_name=name, value=arg_value)
             raise ArgParseError(msg)
 
         if arg.type is list:
