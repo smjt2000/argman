@@ -15,6 +15,16 @@ class _Arg:
     parsed: bool = False
     desc: str = None
 
+    def convert(self, value):
+        if self.type is list:
+            return self.item_type(value)
+        return self.type(value)
+
+    def validate(self, value):
+        if self.choices is not None and value not in self.choices:
+            return False
+        return True
+
 
 @dataclass
 class _PosArg:
@@ -495,41 +505,26 @@ class Base:
                 if next_arg is None:
                     msg = self.error_messages['missing_value_short'].format(arg_name=name)
                     raise ArgParseError(msg)
-                arg_value = next_arg
                 jump = 2
-            if arg.type is not list:
-                try:
-                    arg_value = arg.type(next_arg)
-                except ValueError:
-                    msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__,
-                                                                            arg_name=name)
-                    raise ArgParseError(msg)
-                if arg.choices is not None:
-                    if arg_value not in arg.choices:
-                        msg = self.error_messages['value_not_in_choices_short'].format(
-                            arg_name=name, arg_choices=arg.choices
-                        )
-                        raise ArgParseError(msg)
-            else:
-                values = getattr(self.result, arg_name, [])
-                if not arg.parsed:
-                    values = arg.default
-                try:
-                    casted_value = arg.item_type(arg_value)
-                except ValueError:
+
+            try:
+                arg_value = arg.convert(next_arg)
+            except ValueError:
+                if arg.type is list:
                     msg = self.error_messages['list_item_type_mismatch'].format(
-                        value=arg_value,
-                        type_name=arg.item_type.__name__
-                    )
-                    raise ArgParseError(msg)
-                if arg.choices is not None:
-                    if casted_value not in arg.choices:
-                        msg = self.error_messages['value_not_in_choices_short'].format(
-                            arg_name=name, arg_choices=arg.choices
-                        )
-                        raise ArgParseError(msg)
-                values.append(casted_value)
-                arg_value = values
+                        value=next_arg, type_name=arg.item_type.__name__)
+                else:
+                    msg = self.error_messages['value_type_mismatch'].format(
+                        type_name=arg.type.__name__, arg_name=name)
+                raise ArgParseError(msg)
+            if not arg.validate(arg_value):
+                msg = self.error_messages['value_not_in_choices_short'].format(
+                    arg_name=name, arg_choices=', '.join(map(str, arg.choices)))
+                raise ArgParseError(msg)
+
+            if arg.type is list:
+                values = getattr(self.result, arg_name, arg.default)
+                values.append(arg_value)
             self.__set_value(arg, arg_value)
         return jump
 
@@ -553,39 +548,29 @@ class Base:
             raise ArgParseError(msg)
         arg_value = next_arg
         jump = 2
-        if arg.type is not list:
-            try:
-                arg_value = arg.type(next_arg)
-                self.__set_value(arg, arg_value)
-            except ValueError:
-                msg = self.error_messages['value_type_mismatch'].format(type_name=arg.type.__name__, arg_name=name)
-                raise ArgParseError(msg)
-            if arg.choices is not None:
-                if arg_value not in arg.choices:
-                    msg = self.error_messages['value_not_in_choices_long'].format(
-                        arg_name=name, arg_choices=arg.choices
-                    )
-                    raise ArgParseError(msg)
-        else:
-            values = getattr(self.result, arg_name, [])
-            if not arg.parsed:
-                values = arg.default
-            try:
-                casted_value = arg.item_type(arg_value)
-            except ValueError:
+
+        try:
+            arg_value = arg.convert(next_arg)
+        except ValueError:
+            if arg.type is list:
                 msg = self.error_messages['list_item_type_mismatch'].format(
-                    value=arg_value,
-                    type_name=arg.item_type.__name__
+                    value=next_arg, type_name=arg.item_type.__name__
                 )
-                raise ArgParseError(msg)
-            if arg.choices is not None:
-                if casted_value not in arg.choices:
-                    msg = self.error_messages['value_not_in_choices_long'].format(
-                        arg_name=name, arg_choices=arg.choices
-                    )
-                    raise ArgParseError(msg)
-            values.append(casted_value)
-            self.__set_value(arg, values)
+            else:
+                msg = self.error_messages['value_type_mismatch'].format(
+                    type_name=arg.type.__name__, arg_name=name
+                )
+            raise ArgParseError(msg)
+        if not arg.validate(arg_value):
+            msg = self.error_messages['value_not_in_choices_long'].format(
+                arg_name=name, arg_choices=', '.join(map(str, arg.choices)))
+            raise ArgParseError(msg)
+
+        if arg.type is list:
+            values = getattr(self.result, arg_name, arg.default)
+            values.append(arg_value)
+            arg_value = values
+        self.__set_value(arg, arg_value)
         return jump
 
     def _parse_pos_arg(self, arg) -> None:
