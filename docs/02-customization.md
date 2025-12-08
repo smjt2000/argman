@@ -85,6 +85,17 @@ Available Error Keys:
 'missing_positional_header'
 'missing_positional_item'
 'unknown_in_config'
+'choices_not_list_tuple'
+'choices_type_mismatch'
+'choices_default_type_mismatch'
+'value_not_in_choices_short'
+'value_not_in_choices_long'
+'validator_is_not_callable'
+'default_failed_validation'
+'validation_failed_short'
+'validation_failed_long'
+'validation_failed_short_message'
+'validation_failed_long_message'
 ```
 
 Placeholders used in each message are documented in the source. Unused placeholders are safely ignored.
