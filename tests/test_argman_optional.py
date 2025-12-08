@@ -319,6 +319,66 @@ class TestArgMan(unittest.TestCase):
             am.arg_int(long='num', choices="5,10")
         self.assertIn("Choices must be list or tuple", str(cm.exception))
 
+    def test_validator_not_callable_raises_error(self):
+        """Validator must be callable; non-callable should raise at definition."""
+        am = ArgMan()
+        with self.assertRaises(ValueError) as cm:
+            am.arg_int(long='port', validator="not a function")
+        self.assertIn("Validator should be a callable object", str(cm.exception))
+
+    def test_default_fails_validator_raises_error(self):
+        """Default value must satisfy the validator at definition time."""
+        am = ArgMan()
+
+        def positive(x): return x > 0
+
+        with self.assertRaises(ValueError) as cm:
+            am.arg_int(long='count', default=-5, validator=positive)
+        self.assertIn("Default value must pass the validation", str(cm.exception))
+
+    def test_valid_input_passes_validator(self):
+        """Valid input should pass custom validator."""
+        sys.argv = ['prog', '--port', '8080']
+        am = ArgMan()
+
+        def valid_port(x): return 1 <= x <= 65535
+
+        am.arg_int(long='port', validator=valid_port)
+        args = am.parse()
+        self.assertEqual(args.port, 8080)
+
+    def test_invalid_input_fails_validator_short(self):
+        """Invalid input should fail with short-flag error message."""
+        sys.argv = ['prog', '-p', '99999']
+        am = ArgMan()
+
+        def valid_port(x): return 1 <= x <= 65535
+
+        am.arg_int(short='p', long='port', validator=valid_port)
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stderr = sys.__stderr__
+        self.assertIn("Validation failed for '-p' (99999)", capture_err.getvalue())
+
+    def test_validator_raises_exception(self):
+        """Validator that raises exception should be caught and re-raised as ArgParseError."""
+        sys.argv = ['prog', '--age', '-5']
+        am = ArgMan()
+
+        def validate_age(x):
+            if x < 0:
+                raise ValueError("Age cannot be negative")
+            return True
+
+        am.arg_int(long='age', validator=validate_age)
+        capture_err = io.StringIO()
+        sys.stderr = capture_err
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stderr = sys.__stderr__
+
 
 if __name__ == '__main__':
     unittest.main()
