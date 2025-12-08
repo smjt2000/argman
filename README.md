@@ -63,7 +63,7 @@ v0.3 — Docs & Publish
 v0.4 — Validation & Customization
 
 - [x] Choices: Limit argument values to a predefined set of allowed options.
-- [ ] Validators: Define custom checks for argument values (e.g., range, format).
+- [x] Validators: Define custom checks for argument values (e.g., range, format).
 - [ ] Formatters: Apply custom transformations to parsed argument values (e.g., `str.lower`).
 - [ ] Dependencies: Specify relationships between arguments (e.g., required, exclusive).
 
