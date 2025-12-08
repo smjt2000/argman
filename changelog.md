@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.3 (2025-12-08)
+
+- ### Added
+    - Custom validators for all argument types (arg_int, arg_str, arg_list, etc.) via the validator parameter.
+    - Validation of default values against custom validators at definition time.
+
+- ### Changed
+    - Refactored parsing logic: type conversion and validation are now encapsulated in `_Arg.convert()`,
+      `_Arg.validate_choices()` and `_Arg.validate_custom()` methods.
+    - Isolated value assignment: setting argument values (for short/long aliases) is now handled by a dedicated
+      `__set_value` helper.
+    - Internal code is cleaner, more modular, and easier to extend (e.g., for future formatters or advanced validation).
+
 ## v0.3.1 (2025-11-29)
 
 - ### Added
