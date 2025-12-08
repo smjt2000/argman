@@ -32,10 +32,10 @@ args = am.parse()
 
 # Argument types
 
-#### `arg_int(short=None, long=None, default=None, choices=None, desc=None)`
+#### `arg_int(short=None, long=None, default=None, choices=None, validator=None, desc=None)`
 
 ```python
-am.arg_int(short='n', long='num', default=5, choices=[5, 10, 15], desc='Number of items')
+am.arg_int(short='n', long='num', default=5, choices=[5, 10, 15], validator=lambda x: x > 5, desc='Number of items')
 args = am.parse()
 print(args.num)
 print(args.n)
@@ -58,10 +58,11 @@ Output:
 
 ---
 
-#### `arg_float(short=None, long=None, default=None, choices=None, desc=None)`
+#### `arg_float(short=None, long=None, default=None, choices=None, validator=None, desc=None)`
 
 ```python
-am.arg_float(short='r', long='rate', default=1.0, choices=[1.0, 2.0], desc='Interest rate')
+am.arg_float(short='r', long='rate', default=1.0, choices=[1.0, 2.0], validator=lambda x: 0.0 <= x <= 10.0,
+             desc='Interest rate')
 args = am.parse()
 print(args.rate)
 print(args.r)
@@ -82,10 +83,11 @@ Output:
 
 ---
 
-#### `arg_str(short=None, long=None, default=None, choices=None, desc=None)`
+#### `arg_str(short=None, long=None, default=None, choices=None, validator=None desc=None)`
 
 ```python
-am.arg_str(short='a', long='author', default='anon', choices=['mike', 'anon', 'dave'], desc='Author name')
+am.arg_str(short='a', long='author', default='anon', choices=['mike', 'anon', 'dave'],
+           validator=lambda x: str.isalpha(x), desc='Author name')
 args = am.parse()
 print(args.author)
 print(args.a)
@@ -139,10 +141,11 @@ am.arg_bool(long='color', default=True)
 
 ---
 
-#### `arg_list(short=None, long=None, default=None, choices=None, item_type=str, desc=None)`
+#### `arg_list(short=None, long=None, default=None, choices=None, validator=None item_type=str, desc=None)`
 
 ```python
-am.arg_list(short='f', long='files', default=[], choices=['a.txt', 'b.txt'], desc='Input files')
+am.arg_list(short='f', long='files', default=[], choices=['a.txt', 'b.txt'], validator=lambda x: str.isalnum(x),
+            desc='Input files')
 am.arg_list(long='nums', item_type=int, desc='Numbers')
 args = am.parse()
 print(args.files)
