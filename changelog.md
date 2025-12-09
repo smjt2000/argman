@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.4 (2025-12-09)
+
+- ### Added
+    - Argument dependencies: `requires()` method to enforce that if an argument is used, other specified arguments must also be provided.
+    - Argument conflicts: `conflicts()` method to ensure that certain arguments cannot be used together (mutual exclusion).
+    - Dedicated error messages for dependency violations:
+        - `require_not_provided`: Clearly indicates missing required arguments.
+        - `conflict_is_provided`: Clearly states which conflicting arguments were used together.
+
 ## v0.3.3 (2025-12-08)
 
 - ### Added
