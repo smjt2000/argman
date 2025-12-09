@@ -110,6 +110,8 @@ _DEFAULT_ERRORS = {
     'validation_failed_long': "Validation failed for '--{arg_name}' ({value})",
     'validation_failed_short_message': "Validation failed for '-{arg_name}' ({value}): {err}",
     'validation_failed_long_message': "Validation failed for '--{arg_name}' ({value}): {err}",
+    'require_def_arg_not_found': "Argument '{arg_name}' not found",
+    'require_not_provided': "Missing required argument(s) for '{arg}': {missing_args}",
 }
 
 
@@ -125,6 +127,7 @@ class Base:
         self.pos_args: OrderedDict[str, _PosArg] = OrderedDict()
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
+        self.require_args: dict[str, list[str]] = {}
         if custom_errors:
             self.error_messages.update(custom_errors)
 
@@ -498,6 +501,32 @@ class Base:
         self.__set_arg(list, short, long, default, choices, validator, desc, item_type)
         return None
 
+    def requires(self, arg_name: str, require_args: list[str]) -> None:
+        if arg_name not in self.aliases:
+            raise ValueError(self.error_messages['require_def_arg_not_found'].format(
+                arg_name=arg_name
+            ))
+        for arg in require_args:
+            if arg not in self.aliases:
+                raise ValueError(self.error_messages['require_def_arg_not_found'].format(
+                    arg_name=arg
+                ))
+        self.require_args[arg_name] = require_args
+        return
+
+    def __check_requires(self) -> None:
+        parsed_args = {name for name, arg in self.args.items() if arg.parsed}
+        for arg in parsed_args:
+            required_list = self.require_args.get(arg, [])
+            missing = [name for name in required_list if not self.__get_arg(name).parsed]
+            if missing:
+                missing_str = ', '.join(missing)
+                msg = self.error_messages['require_not_provided'].format(
+                    arg=arg, missing_args=missing_str
+                )
+                raise ArgParseError(msg)
+        return
+
     # TODO: make this function work without length check, to make it smaller
     # TODO: better handling jumps and issues
     def _parse_short_arg(self, short_arg: str, next_arg: str = None) -> int:
@@ -720,6 +749,7 @@ class Base:
             message = header
             message += '\n'.join([msg.format(arg_name=name) for name in missing])
             self._print_err(message)
+        self.__check_requires()
         return self.result
 
 
