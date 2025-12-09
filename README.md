@@ -19,6 +19,7 @@ A lightweight, zero-dependency argument parser for Python CLI tools — simple, 
 - Export parsed args via `dump_args()`
 - Choices validation(`choices=[...]`)
 - Custom validation(`validator=...`)
+- Relation between arguments: `requires`, `conflicts`
 
 ---
 
@@ -65,8 +66,8 @@ v0.4 — Validation & Customization
 
 - [x] Choices: Limit argument values to a predefined set of allowed options.
 - [x] Validators: Define custom checks for argument values (e.g., range, format).
+- [x] Dependencies: Specify relationships between arguments (`requires`, `conflicts`).
 - [ ] Formatters: Apply custom transformations to parsed argument values (e.g., `str.lower`).
-- [ ] Dependencies: Specify relationships between arguments (e.g., required, exclusive).
 
 ## License
 
