@@ -368,7 +368,8 @@ class Base:
         if default is not None and not isinstance(default, int):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='int')
             raise TypeError(msg)
-        self.__set_arg(int, short, long, default, choices, validator, desc)
+        self.__set_arg(_type=int, short=short, long=long, default=default,
+                       choices=choices, validator=validator, desc=desc)
         return None
 
     def arg_float(self, *, short: str = None, long: str = None,
@@ -397,7 +398,8 @@ class Base:
         if default is not None and not isinstance(default, (float, int)):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='number')
             raise TypeError(msg)
-        self.__set_arg(float, short, long, float(default), choices, validator, desc)
+        self.__set_arg(_type=float, short=short, long=long, default=float(default),
+                       choices=choices, validator=validator, desc=desc)
         return None
 
     def arg_str(self, *, short: str = None, long: str = None,
@@ -426,7 +428,8 @@ class Base:
         if default is not None and not isinstance(default, str):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='str')
             raise TypeError(msg)
-        self.__set_arg(str, short, long, default, choices, validator, desc)
+        self.__set_arg(_type=str, short=short, long=long, default=default,
+                       choices=choices, validator=validator, desc=desc)
         return None
 
     def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None) -> None:
@@ -463,7 +466,7 @@ class Base:
         if not isinstance(default, bool):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='bool')
             raise TypeError(msg)
-        self.__set_arg(bool, short, long, default, desc)
+        self.__set_arg(_type=bool, short=short, long=long, default=default, desc=desc)
         if default is True and long is not None:
             no_long = f"no-{long}"
             self.aliases[no_long] = long
@@ -501,7 +504,8 @@ class Base:
             if not isinstance(default, list):
                 msg = self.error_messages['optional_default_type_mismatch'].format(type_name='list')
                 raise TypeError(msg)
-        self.__set_arg(list, short, long, default, choices, validator, desc, item_type)
+        self.__set_arg(_type=list, short=short, long=long, default=default,
+                       choices=choices, validator=validator, desc=desc, item_type=item_type)
         return None
 
     def requires(self, arg_name: str, require_args: list[str]) -> None:
