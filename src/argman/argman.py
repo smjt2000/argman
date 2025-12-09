@@ -112,6 +112,8 @@ _DEFAULT_ERRORS = {
     'validation_failed_long_message': "Validation failed for '--{arg_name}' ({value}): {err}",
     'require_def_arg_not_found': "Argument '{arg_name}' not found",
     'require_not_provided': "Missing required argument(s) for '{arg}': {missing_args}",
+    'conflict_def_arg_not_found': "Argument '{arg_name}' not found",
+    'conflict_is_provided': "Argument '{arg}' cannot be used with: {conflict_args}",
 }
 
 
@@ -128,6 +130,7 @@ class Base:
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
         self.require_args: dict[str, list[str]] = {}
+        self.conflict_args: dict[str, list[str]] = {}
         if custom_errors:
             self.error_messages.update(custom_errors)
 
@@ -527,6 +530,34 @@ class Base:
                 raise ArgParseError(msg)
         return
 
+    def conflicts(self, arg_name: str, conflict_args: list[str]) -> None:
+        if arg_name not in self.aliases:
+            raise ValueError(self.error_messages['conflict_def_arg_not_found'].format(
+                arg_name=arg_name
+            ))
+        for arg in conflict_args:
+            if arg not in self.aliases:
+                raise ValueError(self.error_messages['conflict_def_arg_not_found'].format(
+                    arg_name=arg
+                ))
+        self.conflict_args[arg_name] = conflict_args
+        return
+
+    def __check_conflicts(self) -> None:
+        if not self.conflict_args:
+            return
+        not_parsed_args = {name for name, arg in self.args.items() if arg.parsed}
+        for arg in not_parsed_args:
+            conflict_list = self.conflict_args.get(arg, [])
+            provided = [name for name in conflict_list if self.__get_arg(name).parsed]
+            if provided:
+                provided_str = ', '.join(provided)
+                msg = self.error_messages['conflict_is_provided'].format(
+                    arg=arg, conflict_args=provided_str
+                )
+                raise ArgParseError(msg)
+        return
+
     # TODO: make this function work without length check, to make it smaller
     # TODO: better handling jumps and issues
     def _parse_short_arg(self, short_arg: str, next_arg: str = None) -> int:
@@ -750,6 +781,7 @@ class Base:
             message += '\n'.join([msg.format(arg_name=name) for name in missing])
             self._print_err(message)
         self.__check_requires()
+        self.__check_conflicts()
         return self.result
 
 
