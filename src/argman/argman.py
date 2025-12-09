@@ -182,6 +182,15 @@ class Base:
             setattr(self.result, arg.long, value)
         arg.parsed = True
 
+    def __get_arg(self, name: str) -> _Arg | None:
+        """
+        Internal helper for getting argument by name.
+        """
+        arg_name = self.aliases.get(name)
+        if arg_name is None:
+            return None
+        return self.args.get(arg_name)
+
     def _print_help(self, header: str = None) -> None:
         NAME_MAX_LEN = 22
 
@@ -502,11 +511,10 @@ class Base:
             i = 0
             while i < len(name):
                 arg_name = name[i]
-                alias = self.aliases.get(arg_name)
-                if alias is None:
+                arg = self.__get_arg(arg_name)
+                if arg is None:
                     msg = self.error_messages['unknown_short_in_cluster'].format(arg_name=arg_name, cluster=name)
                     raise ArgParseError(msg)
-                arg = self.args.get(alias)
                 if arg.type is bool:
                     arg_value = True
                     i += 1
@@ -516,11 +524,10 @@ class Base:
 
                 self.__set_value(arg, arg_value)
         else:
-            arg_name = self.aliases.get(name)
-            if arg_name is None:
+            arg = self.__get_arg(name)
+            if arg is None:
                 msg = self.error_messages['unknown_single_short'].format(arg_name=name)
                 raise ArgParseError(msg)
-            arg = self.args.get(arg_name)
             if arg.type is bool:
                 arg_value = True
                 jump = 1
@@ -566,11 +573,10 @@ class Base:
     def _parse_long_arg(self, long_arg: str, next_arg: str = None) -> int:
         jump = 1
         name = long_arg.removeprefix('--')
-        arg_name = self.aliases.get(name)
-        if arg_name is None:
+        arg = self.__get_arg(name)
+        if arg is None:
             msg = self.error_messages['unknown_long'].format(arg_name=name)
             raise ArgParseError(msg)
-        arg = self.args.get(arg_name)
         if arg.type is bool:
             if long_arg.startswith('--no-'):
                 arg_value = False
@@ -612,7 +618,7 @@ class Base:
             raise ArgParseError(msg)
 
         if arg.type is list:
-            values = getattr(self.result, arg_name, arg.default)
+            values = getattr(self.result, name, arg.default)
             values.append(arg_value)
             arg_value = values
         self.__set_value(arg, arg_value)
