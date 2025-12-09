@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.5 (2025-12-09)
+
+- ### Fixed
+    - Updated internal calls of '__set_arg' to use keyword arguments, eliminating a bug caused by positional argument misalignment.
+
 ## v0.3.4 (2025-12-09)
 
 - ### Added
