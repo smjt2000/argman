@@ -518,6 +518,8 @@ class Base:
         return
 
     def __check_requires(self) -> None:
+        if not self.require_args:
+            return
         parsed_args = {name for name, arg in self.args.items() if arg.parsed}
         for arg in parsed_args:
             required_list = self.require_args.get(arg, [])
