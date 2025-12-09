@@ -565,7 +565,7 @@ class Base:
                 raise ArgParseError(msg)
 
             if arg.type is list:
-                values = getattr(self.result, arg_name, arg.default)
+                values = getattr(self.result, name, arg.default)
                 values.append(arg_value)
             self.__set_value(arg, arg_value)
         return jump
