@@ -25,7 +25,7 @@ A lightweight, zero-dependency argument parser for Python CLI tools — simple, 
 
 ## Documentation
 
-Usage examples and API reference: [docs/](docs/)
+Usage examples and API reference: [docs/](https://github.com/smjt2000/argman/tree/main/docs)
 
 ---
 
