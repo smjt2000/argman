@@ -96,6 +96,10 @@ Available Error Keys:
 'validation_failed_long'
 'validation_failed_short_message'
 'validation_failed_long_message'
+'require_def_arg_not_found'
+'require_not_provided'
+'conflict_def_arg_not_found'
+'conflict_is_provided'
 ```
 
 Placeholders used in each message are documented in the source. Unused placeholders are safely ignored.
