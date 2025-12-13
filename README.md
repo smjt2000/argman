@@ -54,7 +54,7 @@ v0.2 — Extended Features
 - [x] `arg_list`, `--no-flag`, `--arg=value`, `--` support
 - [x] Custom error messages
 - [x] config files(`load_config`, `dump_args`)
-- [x] subcommands(one level, must be first argument)
+- [x] subcommands(~~one level, must be first argument~~ can be nested now)
 - [x] custom `argv` support(e.g., `ArgMan(argv=['prog', '--num', '5'])`)
 
 v0.3 — Docs & Publish
