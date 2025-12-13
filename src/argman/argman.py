@@ -4,6 +4,9 @@ from typing import Callable
 import sys
 import json
 
+"""
+VERSION: 0.3.6
+"""
 
 @dataclass
 class _Arg:
