@@ -129,6 +129,8 @@ class Base:
         self.pos_args: OrderedDict[str, _PosArg] = OrderedDict()
         self.aliases: dict[str, str] = {}
         self.result = _ArgResult(self.aliases)
+        self.commands: dict[str, _Cmd] = {}
+        self.result.sub_cmd = None
         self.require_args: dict[str, list[str]] = {}
         self.conflict_args: dict[str, list[str]] = {}
         if custom_errors:
@@ -197,26 +199,32 @@ class Base:
             return None
         return self.args.get(arg_name)
 
-    def _print_help(self, header: str = None) -> None:
+    def add_cmd(self, name: str, desc: str = None) -> "_Cmd":
+        prog = f"{self.program} {name}"
+        cmd = _Cmd(prog=prog, desc=desc)
+        self.commands[name] = cmd
+        return cmd
+
+    def _print_help(self) -> None:
         NAME_MAX_LEN = 22
 
-        def get_arg_name(arg):
-            name = ''
-            if arg.short and arg.long:
-                name = f'-{arg.short}, --{arg.long}'
-            elif arg.short:
-                name = f'-{arg.short}'
-            elif arg.long:
-                name = f'--{arg.long}'
-            if arg.type:
-                if arg.type is list:
-                    name += f' <{arg.type.__name__}[{arg.item_type.__name__}]>'
+        def get_arg_name(_arg):
+            _name = ''
+            if _arg.short and _arg.long:
+                _name = f'-{_arg.short}, --{_arg.long}'
+            elif _arg.short:
+                _name = f'-{_arg.short}'
+            elif _arg.long:
+                _name = f'--{_arg.long}'
+            if _arg.type:
+                if _arg.type is list:
+                    _name += f' <{_arg.type.__name__}[{_arg.item_type.__name__}]>'
                 else:
-                    name += f' <{arg.type.__name__}>'
+                    _name += f' <{_arg.type.__name__}>'
 
-            return name
+            return _name
 
-        header = (header or "Usage: {prog}").format(prog=self.program)
+        header = ("Usage: {prog}" if len(self.commands) < 0 else "Usage: {prog} <command>").format(prog=self.program)
         opt_poses = []
         req_poses = []
         for arg in self.pos_args.values():
@@ -256,6 +264,10 @@ class Base:
                 elif not arg.required:
                     text += f' (optional)'
                 print(text)
+        if len(self.commands) > 0:
+            print("\nCommands:")
+            for name, cmd in self.commands.items():
+                print(f"  {name:<{NAME_MAX_LEN}} : {cmd.desc.capitalize() if cmd.desc else 'No description'}")
 
     def _print_err(self, message: str) -> None:
         if self.exit_on_err:
@@ -742,6 +754,17 @@ class Base:
                 self.pos_only = True
                 i += 1
                 continue
+
+            if not arg.startswith('-'):
+                cmd = self.commands.get(arg)
+                if cmd is not None:
+                    cmd_argv = self.argv[i + 1:]
+                    cmd.argv = cmd_argv
+                    cmd.argc = len(cmd_argv)
+                    result = cmd._parse()
+                    setattr(self.result, arg, result)
+                    setattr(self.result, 'sub_cmd', arg)
+                    break
             if arg.startswith('--'):
                 if '=' in arg:
                     arg, next_arg = arg.split('=', 1)
@@ -804,24 +827,6 @@ class ArgMan(Base):
             self.program = prog or argv[0]
             self.argv = argv[1:]
             self.argc = len(self.argv)
-        self.commands: dict[str, _Cmd] = {}
-        self.result.sub_cmd = None
-
-    def add_cmd(self, name: str, desc: str = None) -> _Cmd:
-        prog = f"{self.program} {name}"
-        cmd = _Cmd(prog=prog, desc=desc)
-        self.commands[name] = cmd
-        return cmd
-
-    def _print_help(self, header: str = None) -> None:
-        header = "Usage: {prog}"
-        if len(self.commands) > 0:
-            header = "Usage: {prog} <command>"
-        super()._print_help(header)
-        if len(self.commands) > 0:
-            print("\nCommands:")
-            for name, cmd in self.commands.items():
-                print(f"  {name:<22} : {cmd.desc.capitalize() if cmd.desc else 'No description'}")
 
     def parse(self) -> _ArgResult:
         """
@@ -849,15 +854,4 @@ class ArgMan(Base):
             >>> print(args.num, args.verbose)
         10 False
         """
-        if len(self.argv) > 0:
-            arg = self.argv[0]
-            cmd = self.commands.get(arg)
-            if cmd is not None:
-                cmd_argv = self.argv[1:]
-                cmd.argv = cmd_argv
-                cmd.argc = len(cmd_argv)
-                result = cmd._parse()
-                setattr(self.result, arg, result)
-                setattr(self.result, 'sub_cmd', arg)
-                return self.result
         return self._parse()
