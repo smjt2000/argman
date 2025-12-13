@@ -1,15 +1,23 @@
 # Changelog
 
+## v0.3.6 (2025-12-13)
+
+- ### Fixed
+    - Subcommand dispatch now correctly handles global flags before subcommand name. Commands like `app --verbose resize --width 100` are now parsed successfully, with global flags (`--verbose`) applied to the root parser and the subcommand (`resize`) dispatched correctly.
+
 ## v0.3.5 (2025-12-09)
 
 - ### Fixed
-    - Updated internal calls of '__set_arg' to use keyword arguments, eliminating a bug caused by positional argument misalignment.
+    - Updated internal calls of '__set_arg' to use keyword arguments, eliminating a bug caused by positional argument
+      misalignment.
 
 ## v0.3.4 (2025-12-09)
 
 - ### Added
-    - Argument dependencies: `requires()` method to enforce that if an argument is used, other specified arguments must also be provided.
-    - Argument conflicts: `conflicts()` method to ensure that certain arguments cannot be used together (mutual exclusion).
+    - Argument dependencies: `requires()` method to enforce that if an argument is used, other specified arguments must
+      also be provided.
+    - Argument conflicts: `conflicts()` method to ensure that certain arguments cannot be used together (mutual
+      exclusion).
     - Dedicated error messages for dependency violations:
         - `require_not_provided`: Clearly indicates missing required arguments.
         - `conflict_is_provided`: Clearly states which conflicting arguments were used together.
