@@ -1,9 +1,21 @@
 # Changelog
 
+## v0.4.0(2025-12-14)
+
+- ### Added
+
+    - formatter support for `arg_str`, `arg_int`, `arg_float`, and `arg_list` arguments.
+      Allows post-parsing transformation of values (e.g., `str.lower`, `str.strip`, custom normalizers).
+- ### Fixed
+
+    - values of list arguments overwite when parsing.
+
 ## v0.3.6 (2025-12-13)
 
 - ### Fixed
-    - Subcommand dispatch now correctly handles global flags before subcommand name. Commands like `app --verbose resize --width 100` are now parsed successfully, with global flags (`--verbose`) applied to the root parser and the subcommand (`resize`) dispatched correctly.
+    - Subcommand dispatch now correctly handles global flags before subcommand name. Commands like
+      `app --verbose resize --width 100` are now parsed successfully, with global flags (`--verbose`) applied to the
+      root parser and the subcommand (`resize`) dispatched correctly.
 
 ## v0.3.5 (2025-12-09)
 
