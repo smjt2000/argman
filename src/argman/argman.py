@@ -675,6 +675,7 @@ class Base:
             if arg.type is list:
                 values = getattr(self.result, name, arg.default)
                 values.append(arg_value)
+                arg_value = values
             self.__set_value(arg, arg_value)
         return jump
 
