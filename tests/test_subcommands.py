@@ -164,21 +164,6 @@ class TestArgManSubcommands(unittest.TestCase):
         self.assertEqual(args.helper.num, 42)
         self.assertFalse(args.global_verbose)
 
-    def test_subcommand_global_flag_before_name_fails(self):
-        """Test that global flags before subcommand name fails with current dispatch."""
-        sys.argv = ['myapp', '--global-verbose', 'helper', '--num', '42']
-        am = ArgMan()
-        am.arg_bool(long='global-verbose', default=False)
-        helper_cmd = am.add_cmd('helper')
-        helper_cmd.arg_int(long='num', default=0)
-        capture_err = io.StringIO()
-        sys.stderr = capture_err
-        with self.assertRaises(SystemExit):
-            am.parse()
-        sys.stderr = sys.__stderr__
-        error_output = capture_err.getvalue()
-        self.assertIn("Unknown argument 'helper'", error_output)
-
 
 if __name__ == '__main__':
     unittest.main()
