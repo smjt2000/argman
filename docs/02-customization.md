@@ -100,6 +100,9 @@ Available Error Keys:
 'require_not_provided'
 'conflict_def_arg_not_found'
 'conflict_is_provided'
+'formatter_is_not_callable'
+'formatting_failed_short'
+'formatting_failed_long'
 ```
 
 Placeholders used in each message are documented in the source. Unused placeholders are safely ignored.
