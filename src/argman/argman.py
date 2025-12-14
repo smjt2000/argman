@@ -728,7 +728,7 @@ class Base:
         try:
             arg_value = arg.format_value(arg_value)
         except Exception as e:
-            msg = self.error_messages['formatting_failed_short'].format(
+            msg = self.error_messages['formatting_failed_long'].format(
                 arg_name=name, err=str(e)
             )
             raise ArgParseError(msg)
