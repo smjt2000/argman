@@ -3,12 +3,11 @@
 ## v0.4.0(2025-12-14)
 
 - ### Added
-
     - formatter support for `arg_str`, `arg_int`, `arg_float`, and `arg_list` arguments.
       Allows post-parsing transformation of values (e.g., `str.lower`, `str.strip`, custom normalizers).
 - ### Fixed
-
     - values of list arguments overwite when parsing.
+    - fixed setting default value for `arg_float` raises error if no value passed for default
 
 ## v0.3.6 (2025-12-13)
 
