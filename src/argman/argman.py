@@ -429,7 +429,8 @@ class Base:
         if default is not None and not isinstance(default, (float, int)):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='number')
             raise TypeError(msg)
-        self.__set_arg(_type=float, short=short, long=long, default=float(default),
+        default = float(default) if default else None
+        self.__set_arg(_type=float, short=short, long=long, default=default,
                        choices=choices, validator=validator, formatter=formatter, desc=desc)
         return None
 
