@@ -69,6 +69,10 @@ v0.4 — Validation & Customization
 - [x] Dependencies: Specify relationships between arguments (`requires`, `conflicts`).
 - [x] Formatters: Apply custom transformations to parsed argument values (e.g., `str.lower`).
 
+v0.5 — More...
+
+- [ ] Argument Groups: Show arguments in group in help message
+
 ## License
 
 LGPL-3.0 © 2025
