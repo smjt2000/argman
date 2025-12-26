@@ -69,9 +69,18 @@ v0.4 — Validation & Customization
 - [x] Dependencies: Specify relationships between arguments (`requires`, `conflicts`).
 - [x] Formatters: Apply custom transformations to parsed argument values (e.g., `str.lower`).
 
-v0.5 — More...
+v0.5 — Argument Organization
 
 - [ ] Argument Groups: Show arguments in group in help message
+- [ ] Hidden Arguments: Hidden in help message
+- [ ] Deprecated Arguments
+
+v0.6 — Advanced Parsing Features
+
+- [ ] Count Arguments with `arg_count`: Track how many times flag appears(`-vvv`)
+- [ ] `arg_dict` method: Support for `--env KEY=VALUE` syntax
+- [ ] Range Values: Parse `--pages 1-10` as range object
+- [ ] Argument Abbrevation: `--verb` matches `--verbose`
 
 ## License
 
