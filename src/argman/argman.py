@@ -8,6 +8,8 @@ import json
 VERSION: 0.4.0
 """
 
+DEFAULT_GROUP_NAME = "Options"
+
 
 @dataclass
 class _Arg:
@@ -50,6 +52,13 @@ class _PosArg:
     default: int | float | str = None
     required: bool = False
     parsed: bool = False
+    desc: str = None
+
+
+@dataclass
+class _Group:
+    name: str
+    args: list[str]
     desc: str = None
 
 
@@ -127,11 +136,21 @@ _DEFAULT_ERRORS = {
     'require_not_provided': "Missing required argument(s) for '{arg}': {missing_args}",
     'conflict_def_arg_not_found': "Argument '{arg_name}' not found",
     'conflict_is_provided': "Argument '{arg}' cannot be used with: {conflict_args}",
+    'invalid_default_group': "Name of default group is invalid",
+    'group_name_empty': "Group name cannot be empty",
+    'group_name_whitespace_around': "Group name with leading/trailing whitespaces: '{group_name}'",
+    'group_name_exist': "Group name already exist: '{group_name}'",
+    'group_name_is_default_group': "Group name and default group are the same: {group_name}",
+    'group_with_no_args': "Group cannot have zero arguments: '{group_name}'",
+    'group_args_duplicate': "Duplicate arguments in group definition: '{group_name}'",
+    'group_arg_not_found': "Argument not found in group definition: '{arg_name}'",
+    'argument_has_group': "Argument already has a group: '{arg_name}'",
+    'group_args_duplicate_with_name': "Argument '{arg_name}' is duplicate in group '{group_name}'"
 }
 
 
 class Base:
-    def __init__(self, prog=None, exit_on_err=True, custom_errors=None):
+    def __init__(self, prog=None, exit_on_err=True, custom_errors=None, default_group=DEFAULT_GROUP_NAME):
         self.program = prog or sys.argv[0]
         self.exit_on_err = exit_on_err
         self.argv = sys.argv[1:]
@@ -144,10 +163,14 @@ class Base:
         self.result = _ArgResult(self.aliases)
         self.commands: dict[str, _Cmd] = {}
         self.result.sub_cmd = None
+        self.groups: OrderedDict[str, _Group] = OrderedDict()
         self.require_args: dict[str, list[str]] = {}
         self.conflict_args: dict[str, list[str]] = {}
+        self.default_group: str = default_group
         if custom_errors:
             self.error_messages.update(custom_errors)
+        if not default_group or type(default_group) is not str:
+            raise ValueError(self.error_messages['invalid_default_group'])
 
     def __set_arg(self, _type: type, short: str = None, long: str = None,
                   default=None, choices=None, validator=None, formatter=None,
@@ -216,9 +239,9 @@ class Base:
             return None
         return self.args.get(arg_name)
 
-    def add_cmd(self, name: str, desc: str = None) -> "_Cmd":
+    def add_cmd(self, name: str, desc: str = None, default_group: str = 'Options') -> "_Cmd":
         prog = f"{self.program} {name}"
-        cmd = _Cmd(prog=prog, desc=desc)
+        cmd = _Cmd(prog=prog, desc=desc, default_group=default_group)
         self.commands[name] = cmd
         return cmd
 
@@ -240,6 +263,11 @@ class Base:
                     _name += f' <{_arg.type.__name__}>'
 
             return _name
+
+        ungrouped = [name for name in self.args if not any(name in group.args for group in self.groups.values())]
+
+        if len(ungrouped) > 0:
+            self.groups[self.default_group] = _Group(self.default_group, list(ungrouped))
 
         header = ("Usage: {prog}" if len(self.commands) < 0 else "Usage: {prog} <command>").format(prog=self.program)
         opt_poses = []
@@ -263,12 +291,17 @@ class Base:
             header += text
         print(header)
         if len(self.args) > 0:
-            print("\nOptions:")
             for arg in self.args.values():
                 NAME_MAX_LEN = max(NAME_MAX_LEN, len(get_arg_name(arg)))
-            for arg in self.args.values():
-                arg_name = get_arg_name(arg)
-                print(f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc.capitalize() if arg.desc else 'No description'}")
+
+            for group_name, group in self.groups.items():
+                print(f"\n{group_name}:")
+                if group.desc:
+                    print(group.desc)
+                for _arg_name in group.args:
+                    arg = self.__get_arg(_arg_name)
+                    arg_name = get_arg_name(arg)
+                    print(f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc.capitalize() if arg.desc else 'No description'}")
         if len(req_poses) > 0 or len(opt_poses) > 0:
             print("\nArguments:")
             for arg in req_poses + opt_poses:
@@ -334,6 +367,73 @@ class Base:
             raise ArgParseError(f"Cannot serialize arguments to JSON: {e}") from e
         except OSError as e:
             raise ArgParseError(f"Failed to write config file '{file_path}': {e}") from e
+
+    def group_args(self, group_name: str, args: list[str], *, desc: str = None) -> None:
+        """
+        Define a group of arguments in help message.
+
+        Args:
+            group_name (str): Name of the grouop.
+            args (list[str]): Name of arguments in the group.
+            desc (str, optional): Description for the group.
+
+        Raises:
+            ValueError:
+                - If group name has leading/trailing whitespaces.
+                - If the the group name is already exist.
+                - If args is empty.
+                - If any argument in args list is not defined.
+
+        Examples:
+            >>> am = ArgMan()
+            >>> am.group_args('Input files', ['output'], desc='List of input files')
+        """
+        if len(group_name) < 1:
+            msg = self.error_messages['group_name_empty']
+            raise ValueError(msg)
+        if group_name != group_name.strip():
+            msg = self.error_messages['group_name_whitespace_around']
+            msg = msg.format(group_name=group_name)
+            raise ValueError(msg)
+        if group_name and (group_name in self.groups.keys() or group_name == self.default_group):
+            msg = self.error_messages['group_name_exist']
+            msg = msg.format(group_name=group_name)
+            raise ValueError(msg)
+        if group_name == self.default_group:
+            msg = self.error_messages['group_name_is_default_group']
+            msg = msg.format(group_name=group_name)
+            raise ValueError(msg)
+        if len(args) < 1:
+            msg = self.error_messages['group_with_no_args']
+            msg = msg.format(group_name=group_name)
+            raise ValueError(msg)
+        if len(args) != len(set(args)):
+            msg = self.error_messages['group_args_duplicate']
+            msg = msg.format(group_name=group_name)
+            raise ValueError(msg)
+        for arg_name in args:
+            if arg_name not in self.aliases:
+                msg = self.error_messages['group_arg_not_found']
+                msg = msg.format(arg_name=arg_name)
+                raise ValueError(msg)
+
+        _group_args = []
+        for arg_name in args:
+            arg = self.__get_arg(arg_name)
+            main_name = arg.long or arg.short
+            already_grouped = any(main_name in group.args for group in self.groups.values())
+            if already_grouped:
+                msg = self.error_messages['argument_has_group']
+                msg = msg.format(arg_name=arg_name)
+                raise ValueError(msg)
+            if main_name in _group_args:
+                msg = self.error_messages['group_args_duplicate_with_name']
+                msg = msg.format(arg_name=arg_name, group_name=group_name)
+                raise ValueError(msg)
+
+            _group_args.append(main_name)
+
+        self.groups[group_name] = _Group(group_name, _group_args, desc)
 
     def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None) -> None:
         """
@@ -854,14 +954,15 @@ class Base:
 
 
 class _Cmd(Base):
-    def __init__(self, prog=None, desc=None, exit_on_err=True, custom_errors=None):
-        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors)
+    def __init__(self, prog=None, desc=None, exit_on_err=True, custom_errors=None, default_group=DEFAULT_GROUP_NAME):
+        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors, default_group=default_group)
         self.desc: str = desc
 
 
 class ArgMan(Base):
-    def __init__(self, *, argv: list[str] = None, prog=None, exit_on_err=True, custom_errors=None):
-        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors)
+    def __init__(self, *, argv: list[str] = None, prog=None, exit_on_err=True, custom_errors=None,
+                 default_group=DEFAULT_GROUP_NAME):
+        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors, default_group=default_group)
         if argv is not None:
             self.program = prog or argv[0]
             self.argv = argv[1:]
