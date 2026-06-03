@@ -71,7 +71,7 @@ v0.4 — Validation & Customization
 
 v0.5 — Argument Organization
 
-- [ ] Argument Groups: Show arguments in group in help message
+- [x] Argument Groups: Show arguments in group in help message(`group_args`)
 - [ ] Hidden Arguments: Hidden in help message
 - [ ] Deprecated Arguments
 
