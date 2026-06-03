@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.4.1(2026-06-03)
+
+- ### Added
+    - Argument Groups (`group_args`): Optional arguments can now be organized into named sections in help output:
+        - Groups are displayed in order they are defined
+        - Each group supports an optional description
+        - Arguments not assigned to any group fall into the default group(shown last)
+        - Default group name can be customized via `default_group` parameter
+    - `default_group` parameter on ArgMan, _Cmd, and add_cmd() to customize implicit group name
+      Allows post-parsing transformation of values (e.g., `str.lower`, `str.strip`, custom normalizers).
+
 ## v0.4.0(2025-12-14)
 
 - ### Added
