@@ -103,6 +103,20 @@ Available Error Keys:
 'formatter_is_not_callable'
 'formatting_failed_short'
 'formatting_failed_long'
+'require_def_arg_not_found'
+'require_not_provided'
+'conflict_def_arg_not_found'
+'conflict_is_provided'
+'invalid_default_group'
+'group_name_empty'
+'group_name_whitespace_around'
+'group_name_exist'
+'group_name_is_default_group'
+'group_with_no_args'
+'group_args_duplicate'
+'group_arg_not_found'
+'argument_has_group'
+'group_args_duplicate_with_name'
 ```
 
 Placeholders used in each message are documented in the source. Unused placeholders are safely ignored.
