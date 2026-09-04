@@ -17,6 +17,7 @@ class _Arg:
     long: str = None
     type: type = None
     item_type: type = str
+    hidden: bool = False
     default: int | float | str | list = None
     choices: list = None
     validator: Callable = None
@@ -49,6 +50,7 @@ class _Arg:
 class _PosArg:
     name: str
     type: type = str
+    hidden: bool = False
     default: int | float | str = None
     required: bool = False
     parsed: bool = False
@@ -173,8 +175,8 @@ class Base:
             raise ValueError(self.error_messages['invalid_default_group'])
 
     def __set_arg(self, _type: type, short: str = None, long: str = None,
-                  default=None, choices=None, validator=None, formatter=None,
-                  desc=None, item_type=None) -> None:
+                  hidden=False, default=None, choices=None, validator=None,
+                  formatter=None, desc=None, item_type=None) -> None:
         """
         Internal helper for registering an argument.
         """
@@ -208,7 +210,7 @@ class Base:
             _long = _long.replace('-', '_')
         main_name = long or short
         arg = _Arg(
-            short=short, long=_long, type=_type, default=default,
+            short=short, long=_long, type=_type, hidden=hidden, default=default,
             validator=validator, formatter=formatter, choices=choices,
             desc=desc, item_type=item_type
         )
@@ -273,6 +275,8 @@ class Base:
         opt_poses = []
         req_poses = []
         for arg in self.pos_args.values():
+            if arg.hidden:
+                continue
             if arg.required:
                 req_poses.append(arg)
             else:
@@ -295,11 +299,16 @@ class Base:
                 NAME_MAX_LEN = max(NAME_MAX_LEN, len(get_arg_name(arg)))
 
             for group_name, group in self.groups.items():
+                group_args = list(filter(lambda a: not self.__get_arg(a).hidden, group.args))
+                if len(group_args) < 1:
+                    continue
                 print(f"\n{group_name}:")
                 if group.desc:
                     print(group.desc)
                 for _arg_name in group.args:
                     arg = self.__get_arg(_arg_name)
+                    if arg.hidden:
+                        continue
                     arg_name = get_arg_name(arg)
                     print(f"  {arg_name:<{NAME_MAX_LEN}} : {arg.desc.capitalize() if arg.desc else 'No description'}")
         if len(req_poses) > 0 or len(opt_poses) > 0:
@@ -435,13 +444,14 @@ class Base:
 
         self.groups[group_name] = _Group(group_name, _group_args, desc)
 
-    def arg_pos(self, name: str, *, required=True, default=None, _type=str, desc=None) -> None:
+    def arg_pos(self, name: str, *, required=True, hidden=False, default=None, _type=str, desc=None) -> None:
         """
         Define a positional argument.
 
         Args:
             name (str): Name of the argument variable.
             required (bool, optional): Whether the argument must be provided. Defaults to True.
+            hidden (bool): Wheter the argument is shown in help message. Defaults to False(show).
             default (any, optional): Default value for the argument if not provided.
             _type (type, optional): Type to which the argument value should be converted. Defaults to str.
             desc (str, optional): Description for the argument, used in help messages.
@@ -464,21 +474,23 @@ class Base:
                 raise ValueError(self.error_messages['required_after_optional'])
         arg = _PosArg(
             name=name, type=_type,
-            default=default, desc=desc,
-            required=required
+            hidden=hidden, default=default,
+            desc=desc, required=required
         )
         self.pos_args[name] = arg
         setattr(self.result, name, default)
         return None
 
     def arg_int(self, *, short: str = None, long: str = None,
-                default=None, choices=None, validator=None, formatter=None, desc=None) -> None:
+                hidden=False, default=None, choices=None,
+                validator=None, formatter=None, desc=None) -> None:
         """
         Defines an optional integer argument.
 
         Args:
             short (str, optional): Short name for the argument (e.g., `-n`).
             long (str, optional): Long name for the argument (e.g., `--number`).
+            hidden (bool): Wheter the argument is shown in help message. Defaults to False(show).
             default (int, required): Default integer value for the argument.
             choices (list, optional): List of available options for the argument.
             validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
@@ -498,18 +510,20 @@ class Base:
         if default is not None and not isinstance(default, int):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='int')
             raise TypeError(msg)
-        self.__set_arg(_type=int, short=short, long=long, default=default,
+        self.__set_arg(_type=int, short=short, long=long, hidden=hidden, default=default,
                        choices=choices, validator=validator, formatter=formatter, desc=desc)
         return None
 
     def arg_float(self, *, short: str = None, long: str = None,
-                  default=None, choices=None, validator=None, formatter=None, desc=None) -> None:
+                  hidden=False, default=None, choices=None,
+                  validator=None, formatter=None, desc=None) -> None:
         """
         Defines an optional float argument.
 
         Args:
             short (str, optional): Short name for the argument (e.g., `-r`).
             long (str, optional): Long name for the argument (e.g., `--rate`).
+            hidden (bool): Wheter the argument is shown in help message. Defaults to False(show).
             default (float, required): Default float value for the argument.
             choices (list, optional): List of available options for the argument.
             validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
@@ -530,18 +544,20 @@ class Base:
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='number')
             raise TypeError(msg)
         default = float(default) if default else None
-        self.__set_arg(_type=float, short=short, long=long, default=default,
+        self.__set_arg(_type=float, short=short, long=long, hidden=hidden, default=default,
                        choices=choices, validator=validator, formatter=formatter, desc=desc)
         return None
 
     def arg_str(self, *, short: str = None, long: str = None,
-                default=None, choices=None, validator=None, formatter=None, desc=None) -> None:
+                hidden=False, default=None, choices=None,
+                validator=None, formatter=None, desc=None) -> None:
         """
         Defines an optional string argument.
 
         Args:
             short (str, optional): Short name for the argument (e.g., `-a`).
             long (str, optional): Long name for the argument (e.g., `--author`).
+            hidden (bool): Wheter the argument is shown in help message. Defaults to False(show).
             default (str, required): Default str value for the argument.
             choices (list, optional): List of available options for the argument.
             validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
@@ -561,17 +577,18 @@ class Base:
         if default is not None and not isinstance(default, str):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='str')
             raise TypeError(msg)
-        self.__set_arg(_type=str, short=short, long=long, default=default,
+        self.__set_arg(_type=str, short=short, long=long, hidden=hidden, default=default,
                        choices=choices, validator=validator, formatter=formatter, desc=desc)
         return None
 
-    def arg_bool(self, *, short: str = None, long: str = None, default=False, desc=None) -> None:
+    def arg_bool(self, *, short: str = None, long: str = None, hidden=False, default=False, desc=None) -> None:
         """
         Defines an optional boolean argument.
 
         Args:
             short (str, optional): Short name for the argument (e.g., `-r`).
             long (str, optional): Long name for the argument (e.g., `--run`).
+            hidden (bool): Wheter the argument is shown in help message. Defaults to False(show).
             default (bool, required): Default bool value for the argument.
             desc (str, optional): Description for the argument, used in help messages.
 
@@ -599,13 +616,13 @@ class Base:
         if not isinstance(default, bool):
             msg = self.error_messages['optional_default_type_mismatch'].format(type_name='bool')
             raise TypeError(msg)
-        self.__set_arg(_type=bool, short=short, long=long, default=default, desc=desc)
+        self.__set_arg(_type=bool, short=short, long=long, hidden=hidden, default=default, desc=desc)
         if default is True and long is not None:
             no_long = f"no-{long}"
             self.aliases[no_long] = long
         return None
 
-    def arg_list(self, *, short: str = None, long: str = None, default=None,
+    def arg_list(self, *, short: str = None, long: str = None, hidden=False, default=None,
                  choices=None, validator=None, formatter=None,
                  item_type: type = str, desc=None) -> None:
         """
@@ -614,6 +631,7 @@ class Base:
         Args:
             short (str, optional): Short name for the argument (e.g., `-f`).
             long (str, optional): Long name for the argument (e.g., `--file`).
+            hidden (bool): Wheter the argument is shown in help message. Defaults to False(show).
             default (list, optional): Default list value for the argument.
             choices (list, optional): List of available options for the argument.
             validator (callable, optional): Function to validate the parsed value (e.g., `lambda x: x > 0`).
@@ -639,7 +657,7 @@ class Base:
             if not isinstance(default, list):
                 msg = self.error_messages['optional_default_type_mismatch'].format(type_name='list')
                 raise TypeError(msg)
-        self.__set_arg(_type=list, short=short, long=long, default=default,
+        self.__set_arg(_type=list, short=short, long=long, hidden=hidden, default=default,
                        choices=choices, validator=validator, formatter=formatter,
                        desc=desc, item_type=item_type)
         return None
