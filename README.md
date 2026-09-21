@@ -73,7 +73,7 @@ v0.5 — Argument Organization
 
 - [x] Argument Groups: Show arguments in group in help message(`group_args`)
 - [x] Hidden Arguments: Hidden in help message
-- [ ] Color Output: Add color to help message
+- [x] Color Output: Add color to help message(`colored_help` and 'colors')
 - [ ] Deprecated Arguments
 
 v0.6 — Advanced Parsing Features
