@@ -443,6 +443,20 @@ class TestArgMan(unittest.TestCase):
         self.assertIn('Command Group', cmd.groups)
         self.assertNotIn('Parent Group', cmd.groups)
 
+    def test_hidden_args_not_in_help(self):
+        """Hidden arguments should not appear in help message."""
+        am = ArgMan(argv=['prog', '--help'])
+        am.arg_int(short="n", long="num", hidden=True, desc="Hidden integer arg")
+        am.arg_str(long="name", desc="Should be in help")
+        capture_out = io.StringIO()
+        sys.stdout = capture_out
+        with self.assertRaises(SystemExit):
+            am.parse()
+        sys.stdout = sys.stdout
+        self.assertNotIn('Hidden integer arg', capture_out.getvalue())
+        self.assertIn('Should be in help', capture_out.getvalue())
+
+
 
 if __name__ == '__main__':
     unittest.main()
