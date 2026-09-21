@@ -158,28 +158,47 @@ COLORS = {
     'magenta': '\033[35m',
     'cyan': '\033[36m',
 
-    'bg-red': '\033[41m',
-    'bg-green': '\033[42m',
-    'bg-yellow': '\033[43m',
-    'bg-blue': '\033[44m',
-    'bg-magenta': '\033[45m',
-    'bg-cyan': '\033[46m'
+    # 'bg-red': '\033[41m',
+    # 'bg-green': '\033[42m',
+    # 'bg-yellow': '\033[43m',
+    # 'bg-blue': '\033[44m',
+    # 'bg-magenta': '\033[45m',
+    # 'bg-cyan': '\033[46m'
 }
 
+DEFAULT_COLORS = {
+    'usage': 'red',
+    'section': 'green',
+    'argument': 'blue',
+    'type': 'red',
+    'item_type': 'green',
+    'optional': 'yellow',
+    'default': 'yellow',
+}
 
-def _color_handler(use_color: bool):
+def _color_handler(use_color: bool, colors: dict):
     RESET = '\033[0m'
 
-    def color(text: str, color_code: str):
+    def color(text: str, name: str):
         if not use_color:
             return text
-        return f"{color_code}{text}{RESET}"
+
+        color = colors[name]
+
+        if color is None:
+            return text
+
+        return f'{COLORS[color]}{text}{RESET}'
 
     return color
 
 
 class Base:
-    def __init__(self, prog=None, exit_on_err=True, custom_errors=None, default_group=DEFAULT_GROUP_NAME, colored_help=False):
+    def __init__(
+            self, prog=None, exit_on_err=True, custom_errors=None,
+            default_group=DEFAULT_GROUP_NAME,
+            colored_help=False, colors=None
+            ):
         self.program = prog or sys.argv[0]
         self.exit_on_err = exit_on_err
         self.argv = sys.argv[1:]
@@ -197,6 +216,9 @@ class Base:
         self.conflict_args: dict[str, list[str]] = {}
         self.default_group: str = default_group
         self.colored_help = colored_help
+        self.colors = {
+            **DEFAULT_COLORS, **(colors or {})
+        }
         if custom_errors:
             self.error_messages.update(custom_errors)
         if not default_group or type(default_group) is not str:
@@ -278,7 +300,10 @@ class Base:
     def _print_help(self) -> None:
         NAME_MAX_LEN = 22
 
-        color = _color_handler(self.colored_help and sys.stdout.isatty())
+        color = _color_handler(
+            self.colored_help and sys.stdout.isatty(),
+            self.colors
+            )
 
         def get_arg_name(_arg, with_color=True):
             _name = ''
@@ -289,16 +314,16 @@ class Base:
             elif _arg.long:
                 _name = f'--{_arg.long}'
             if with_color:
-                _name = color(_name, COLORS['blue'])
+                _name = color(_name, 'argument')
             if _arg.type:
                 if _arg.type is list:
                     _name += (
-                        f" <{color(_arg.type.__name__, COLORS['red'])}"
-                        f"[{color(_arg.item_type.__name__, COLORS['green'])}]>"
+                        f" <{color(_arg.type.__name__, 'type')}"
+                        f"[{color(_arg.item_type.__name__, 'item_type')}]>"
                     ) if with_color else f' <{_arg.type.__name__}[{_arg.item_type.__name__}]>'
                 else:
                     _name += (
-                        f' <{color(_arg.type.__name__, COLORS['red'])}>'
+                        f' <{color(_arg.type.__name__, 'type')}>'
                     ) if with_color else f' <{_arg.type.__name__}>'
 
             return _name
@@ -309,9 +334,9 @@ class Base:
             self.groups[self.default_group] = _Group(self.default_group, list(ungrouped))
 
         # header = ("Usage: {prog}" if len(self.commands) < 0 else "Usage: {prog} <command>").format(prog=self.program)
-        header = f"{color('Usage', COLORS['red'])}: {self.program}"
+        header = f"{color('Usage', 'usage')}: {self.program}"
         if len(self.commands) > 0:
-            header = f"{color('Usage', COLORS['red'])}: {self.program} <command>"
+            header = f"{color('Usage', 'usage')}: {self.program} <command>"
         opt_poses = []
         req_poses = []
         for arg in self.pos_args.values():
@@ -331,7 +356,7 @@ class Base:
         if opt_poses:
             text = ''
             for arg in opt_poses:
-                text += f' [{color(arg.name, COLORS['blue'])}]'
+                text += f' [{color(arg.name, 'argument')}]'
             header += text
         print(header)
         if len(self.args) > 0:
@@ -342,7 +367,7 @@ class Base:
                 group_args = list(filter(lambda a: not self.__get_arg(a).hidden, group.args))
                 if len(group_args) < 1:
                     continue
-                print(f"\n{color(group_name, COLORS['green'])}:")
+                print(f"\n{color(group_name, 'section')}:")
                 if group.desc:
                     print(group.desc)
                 for _arg_name in group.args:
@@ -354,22 +379,22 @@ class Base:
                     padding = ' ' * (NAME_MAX_LEN - len(arg_name))
                     print(f"  {colored_arg_name}{padding}: {arg.desc.capitalize() if arg.desc else 'No description'}")
         if len(req_poses) > 0 or len(opt_poses) > 0:
-            print(f"\n{color('Arguments', COLORS['green'])}:")
+            print(f"\n{color('Arguments', 'section')}:")
             for arg in req_poses + opt_poses:
                 arg_name = f'{arg.name} <{arg.type.__name__}>'
-                colored_arg_name = f"{arg.name} <{color(arg.type.__name__, COLORS['red'])}>"
+                colored_arg_name = f"{arg.name} <{color(arg.type.__name__, 'argument')}>"
                 padding = ' ' * (NAME_MAX_LEN - len(arg_name))
                 text = f"  {colored_arg_name}{padding}: {arg.desc.capitalize() if arg.desc else 'No description'}"
 
                 if arg.default is not None and not arg.required:
-                    text += f" ({color('optional', COLORS['yellow'])}, {color('default', COLORS['yellow'])}: {arg.default})"
+                    text += f" ({color('optional', 'optional')}, {color('default', 'default')}: {arg.default})"
                 elif arg.default is not None:
-                    text += f" [{color('default', COLORS['yellow'])}: {arg.default}]"
+                    text += f" [{color('default', 'default')}: {arg.default}]"
                 elif not arg.required:
-                    text += f" ({color('optional', COLORS['yellow'])})"
+                    text += f" ({color('optional', 'optional')})"
                 print(text)
         if len(self.commands) > 0:
-            print(f"\n{color('Commands', COLORS['red'])}:")
+            print(f"\n{color('Commands', 'section')}:")
             for name, cmd in self.commands.items():
                 print(f"  {name:<{NAME_MAX_LEN}} : {cmd.desc.capitalize() if cmd.desc else 'No description'}")
 
@@ -1024,8 +1049,11 @@ class _Cmd(Base):
 
 class ArgMan(Base):
     def __init__(self, *, argv: list[str] = None, prog=None, exit_on_err=True, custom_errors=None,
-                 default_group=DEFAULT_GROUP_NAME, colored_help=False):
-        super().__init__(prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors, default_group=default_group, colored_help=colored_help)
+                 default_group=DEFAULT_GROUP_NAME, colored_help=False, colors=None):
+        super().__init__(
+            prog=prog, exit_on_err=exit_on_err, custom_errors=custom_errors,
+            default_group=default_group, colored_help=colored_help, colors=colors
+            )
         if argv is not None:
             self.program = prog or argv[0]
             self.argv = argv[1:]
