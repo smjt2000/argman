@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.4.3(2026-09-22)
+- ### Added
+  - Colored Help Output: Help messages can now be displayed with ANSI colors:
+      - `colored_help` parameter on `ArgMan` to enable colored help output
+      - Different help sections and argument elements use distinct colors
+      - Colors are automatically disabled when output is not connected to a TTY
+      - Colored output can be disabled explicitly via `colored_help=False`
+  - Colorized argument names, types, positional arguments, sections, and optional/default labels in help output
+
+## v0.4.2(2026-09-22)
+
+- ### Added
+      - Hidden Arguments: Arguments can now be hidden from help output using the `hidden=True` parameter on `arg_int`, `arg_str`, and other argument methods
+      - `hidden` parameter is also supported by positional arguments via `arg_pos`
+
 ## v0.4.1(2026-06-03)
 
 - ### Added
