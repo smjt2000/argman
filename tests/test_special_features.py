@@ -250,7 +250,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         self.assertNotIn('Options:', capture_out.getvalue())
 
     def test_partial_grouping_default_group_appears(self):
@@ -263,7 +263,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         output = capture_out.getvalue()
         self.assertIn('Numbers:', output)
         self.assertIn('Options:', output)
@@ -278,7 +278,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         output = capture_out.getvalue()
         self.assertGreater(output.index('Options:'), output.index('Numbers:'))
 
@@ -295,7 +295,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         output = capture_out.getvalue()
         self.assertLess(output.index('AAA:'), output.index('BBB:'))
         self.assertLess(output.index('BBB:'), output.index('CCC:'))
@@ -400,7 +400,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         output = capture_out.getvalue()
         numbers_pos = output.index('Numbers:')
         num_pos = output.index('--num')
@@ -415,7 +415,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         self.assertIn('All numeric options', capture_out.getvalue())
 
         # ─── Integration ───────────────────────────────────────────────
@@ -452,7 +452,7 @@ class TestArgMan(unittest.TestCase):
         sys.stdout = capture_out
         with self.assertRaises(SystemExit):
             am.parse()
-        sys.stdout = sys.stdout
+        sys.stdout = sys.__stdout__
         self.assertNotIn('Hidden integer arg', capture_out.getvalue())
         self.assertIn('Should be in help', capture_out.getvalue())
 
