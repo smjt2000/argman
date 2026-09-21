@@ -5,7 +5,7 @@ import sys
 import json
 
 """
-VERSION: 0.4.1
+VERSION: 0.4.2
 """
 
 DEFAULT_GROUP_NAME = "Options"
