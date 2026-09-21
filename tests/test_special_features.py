@@ -456,6 +456,102 @@ class TestArgMan(unittest.TestCase):
         self.assertNotIn('Hidden integer arg', capture_out.getvalue())
         self.assertIn('Should be in help', capture_out.getvalue())
 
+    def test_colored_help_contains_ansi_codes(self):
+        """Colored help should contain ANSI color codes when enabled in a TTY."""
+        am = ArgMan(argv=['prog', '--help'], colored_help=True)
+        am.arg_str(long='name', desc='A name')
+
+        capture_out = io.StringIO()
+        sys.stdout = capture_out
+        sys.stdout.isatty = lambda: True
+
+        with self.assertRaises(SystemExit):
+            am.parse()
+
+        sys.stdout = sys.__stdout__
+
+        output = capture_out.getvalue()
+        self.assertIn('\033[31mUsage\033[0m', output)
+        self.assertIn('\033[32mOptions\033[0m', output)
+        self.assertIn('\033[34m--name\033[0m', output)
+        self.assertIn('\033[31mstr\033[0m', output)
+
+    def test_colored_help_disabled_contains_no_ansi_codes(self):
+        """Colored help should not contain ANSI codes when disabled."""
+        am = ArgMan(argv=['prog', '--help'], colored_help=False)
+        am.arg_str(long='name', desc='A name')
+
+        capture_out = io.StringIO()
+        sys.stdout = capture_out
+        sys.stdout.isatty = lambda: True
+
+        with self.assertRaises(SystemExit):
+            am.parse()
+
+        sys.stdout = sys.__stdout__
+
+        output = capture_out.getvalue()
+        self.assertNotIn('\033[', output)
+        self.assertIn('Usage: prog', output)
+        self.assertIn('--name', output)
+
+    def test_colored_help_disabled_for_non_tty(self):
+        """Colored help should not contain ANSI codes when stdout is not a TTY."""
+        am = ArgMan(argv=['prog', '--help'], colored_help=True)
+        am.arg_str(long='name', desc='A name')
+
+        capture_out = io.StringIO()
+        sys.stdout = capture_out
+        sys.stdout.isatty = lambda: False
+
+        with self.assertRaises(SystemExit):
+            am.parse()
+
+        sys.stdout = sys.__stdout__
+
+        output = capture_out.getvalue()
+        self.assertNotIn('\033[', output)
+        self.assertIn('Usage: prog', output)
+        self.assertIn('--name', output)
+
+    def test_colored_help_argument_types(self):
+        """Colored help should color argument names and their types."""
+        am = ArgMan(argv=['prog', '--help'], colored_help=True)
+        am.arg_int(short='n', long='number')
+        am.arg_list(long='tags', item_type=str)
+
+        capture_out = io.StringIO()
+        sys.stdout = capture_out
+        sys.stdout.isatty = lambda: True
+
+        with self.assertRaises(SystemExit):
+            am.parse()
+
+        sys.stdout = sys.__stdout__
+
+        output = capture_out.getvalue()
+        self.assertIn('\033[34m-n, --number\033[0m', output)
+        self.assertIn('<\033[31mint\033[0m>', output)
+        self.assertIn('\033[34m--tags\033[0m', output)
+        self.assertIn('<\033[31mlist\033[0m[\033[32mstr\033[0m]>', output)
+
+    def test_colored_help_optional_and_default(self):
+        """Colored help should color optional and default labels."""
+        am = ArgMan(argv=['prog', '--help'], colored_help=True)
+        am.arg_pos('name', _type=str, default='John', required=False)
+
+        capture_out = io.StringIO()
+        sys.stdout = capture_out
+        sys.stdout.isatty = lambda: True
+
+        with self.assertRaises(SystemExit):
+            am.parse()
+
+        sys.stdout = sys.__stdout__
+
+        output = capture_out.getvalue()
+        self.assertIn('\033[33moptional\033[0m', output)
+        self.assertIn('\033[33mdefault\033[0m', output)
 
 
 if __name__ == '__main__':
