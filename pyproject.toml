@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "argman"
-version = "0.4.2"
+version = "0.4.3"
 description = "A lightweight argument manager for Python CLI tools"
 authors = [{ name = "Seyed Mohammad Javad Taghipoor", email = "smjavadt.1379@gmail.com"}]
 readme = "README.md"
@@ -23,6 +23,19 @@ Homepage = "https://github.com/smjt2000/argman"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[dependency-groups]
+dev = [
+    "argman",
+]
+
+[tool.uv.workspace]
+members = [
+    ".",
+]
+
+[tool.uv.sources]
+argman = { workspace = true }
 
 [tool.setuptools]
 package-dir = {"" = "src"}
